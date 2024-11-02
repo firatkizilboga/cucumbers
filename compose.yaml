@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+ database:
+   image: mysql
+   environment:
+     MYSQL_ROOT_PASSWORD: 1234 
+     MYSQL_DATABASE: cucumdb 
+     MYSQL_USER: cucumber
+     MYSQL_PASSWORD: 1234 
+   ports:
+     - 3306:3306
+
+

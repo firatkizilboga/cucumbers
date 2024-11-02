@@ -3,6 +3,8 @@ version: '3'
 services:
   database:
     image: mysql
+    container_name: mysql
+    hostname: cucumbers
     environment:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: cucumdb

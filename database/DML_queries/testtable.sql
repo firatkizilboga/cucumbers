@@ -1,6 +1,0 @@
-CREATE TABLE TEST_TABLE (
-    ID INT PRIMARY KEY,
-    Name VARCHAR(100),
-    Age INT,
-    Email VARCHAR(100)
-);

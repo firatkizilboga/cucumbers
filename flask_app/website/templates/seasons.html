@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %} Seasons {% endblock %}
+
+{% block content %}
+    <h1>Seasons Placeholder</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Season</th>
+                <th>Champion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for season in seasons %}
+                <tr>
+                    <td>{{season.season}}</td>
+                    <td>{{season.champion}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

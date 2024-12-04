@@ -19,14 +19,25 @@
     </head>
 
     <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="navbar">
-            <div class="navbar-nav">
-                <a href="/" class="nav-item nav-link" id="homepage">Home</a>
-                <a href="/teams" class="nav-item nav-link" id="teams">Teams</a>
-                <a href="/players" class="nav-item nav-link" id="players">Players</a>
-                <a href="/seasons" class="nav-item nav-link" id="seasons">Seasons</a>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-targ="#navbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbar">
+                <div class="navbar-nav">
+                    <a href="/" class="nav-item nav-link" id="homepage">Home</a>
+                    <a href="/teams" class="nav-item nav-link" id="teams">Teams</a>
+                    <a href="/players" class="nav-item nav-link" id="players">Players</a>
+                    <a href="/seasons" class="nav-item nav-link" id="seasons">Seasons</a>
+                </div>
             </div>
         </nav>        
+
+        <div class="container">
+            {% block content %}
+            {% endblock %}
+        </div>
 
         <script
         src="https://code.jquery.com/jquery-3.2.1.slim.min.js"

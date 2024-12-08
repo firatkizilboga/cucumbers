@@ -28,7 +28,19 @@
                 <div class="navbar-nav">
                     <a href="/" class="nav-item nav-link" id="homepage">Home</a>
                     <a href="/teams" class="nav-item nav-link" id="teams">Teams</a>
-                    <a href="/players" class="nav-item nav-link" id="players">Players</a>
+
+                    <!-- player tables dropdown menu -->
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="playersDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Players
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="playersDropdown">
+                            <a href="/players" class="dropdown-item" id="players">Player List</a>
+                            <a href="/player_season_stats" class="dropdown-item" id="player_season_stats">Player Season Stats</a>
+                            <a href="/player_season_info" class="dropdown-item" id="player_season_info">Player Season Info</a>
+                        </div>
+                    </div>
+
                     <a href="/seasons" class="nav-item nav-link" id="seasons">Seasons</a>
                 </div>
             </div>

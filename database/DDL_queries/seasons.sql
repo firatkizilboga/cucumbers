@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS Seasons;
+
 CREATE TABLE Seasons (
     season_id INT PRIMARY KEY,
     year DATE,
@@ -7,8 +9,5 @@ CREATE TABLE Seasons (
 );
 
 --INSERT INTO Seasons VALUES (2024, 20, '2024-11-10', 250, 50)
-
 --SELECT * FROM Seasons;
-
 --DELETE FROM Seasons WHERE season_id = 2024;
-

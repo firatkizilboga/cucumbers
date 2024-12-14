@@ -1,3 +1,38 @@
+CREATE TABLE advanced (
+    Season_ID INT,
+    Season INT,
+    Player_ID INT,
+    Player VARCHAR(100),
+    Birth_Year INT,
+    Pos VARCHAR(5),
+    Age INT,
+    Experience INT,
+    LG VARCHAR(5),
+    Team VARCHAR(10),
+    G INT,
+    MP INT,
+    PER DECIMAL(5,2),
+    TS_Percent DECIMAL(5,3),
+    X3P_AR DECIMAL(5,3),
+    F_TR DECIMAL(5,3),
+    ORB_Percent DECIMAL(5,3),
+    DRB_Percent DECIMAL(5,3),
+    TRB_Percent DECIMAL(5,3),
+    AST_Percent DECIMAL(5,3),
+    STL_Percent DECIMAL(5,3),
+    BLK_Percent DECIMAL(5,3),
+    TOV_Percent DECIMAL(5,3),
+    USG_Percent DECIMAL(5,3),
+    OWS DECIMAL(5,2),
+    DWS DECIMAL(5,2),
+    WS DECIMAL(5,2),
+    WS_48 DECIMAL(5,3),
+    OBPM DECIMAL(5,3),
+    DBPM DECIMAL(5,3),
+    BPM DECIMAL(5,3),
+    VORP DECIMAL(5,3)
+);
+
 CREATE TABLE player_award_shares(
     Season INT,                   -- Year of the award season
     Award VARCHAR(50),            -- Name of the award
@@ -11,9 +46,7 @@ CREATE TABLE player_award_shares(
     Winner BOOLEAN,               -- TRUE if the player won the award, FALSE otherwise
     Season_ID INT,                -- Unique identifier for the season
     Player_ID INT,                -- Unique identifier for the player
-    PRIMARY KEY (Season_ID, Player_ID) -- Composite primary key
 );
-
 
 CREATE TABLE team_summaries(
     Season INT,                      -- Season year

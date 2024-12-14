@@ -3,9 +3,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 # Database connection details
-MYSQL_USER = "cucumber"
-MYSQL_PASSWORD = "1234"
-MYSQL_HOST = "localhost"
+MYSQL_USER = "admin"
+MYSQL_PASSWORD = "31cuCUMbers"
+MYSQL_HOST = "134.122.79.205"
 MYSQL_PORT = 3306
 MYSQL_DATABASE = "cucumdb"
 
@@ -13,7 +13,9 @@ MYSQL_DATABASE = "cucumdb"
 NBA_SHOTS_DIR = "NBA-Shots"
 
 # Create SQLAlchemy engine
-engine = create_engine(f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}")
+engine = create_engine(
+    f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
+)
 
 # Define column mapping to match the database schema
 COLUMN_MAPPING = {
@@ -63,7 +65,7 @@ for filename in os.listdir(NBA_SHOTS_DIR):
         data = data[list(valid_columns.values())]
 
         # Insert data into the database
-        data.to_sql("Game_Shots", engine, if_exists="append", index=False)
+        data.to_sql("game_shots", engine, if_exists="append", index=False)
         print(f"Inserted {len(data)} rows from {filename} into Game_Shots.")
 
 print("All data has been inserted successfully.")

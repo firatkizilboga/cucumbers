@@ -28,3 +28,6 @@ CREATE TABLE Player_Season_Stats (
     FOREIGN KEY (Season_ID) REFERENCES Seasons (Season_ID) ON DELETE CASCADE,
     FOREIGN KEY (Player_ID) REFERENCES Players (Player_ID) ON DELETE CASCADE
 );
+
+CREATE INDEX i_season ON Player_Season_Stats (Season_ID);
+CREATE INDEX i_player ON Player_Season_Stats (Player_ID);

@@ -25,5 +25,5 @@ CREATE TABLE Team_Season_Stats (
     attend INT,
     attend_g INT,
     PRIMARY KEY (team_id, season_id),
-    FOREIGN KEY (season_id) REFERENCES seasons(season_id) ON DELETE CASCADE
+    FOREIGN KEY (season_id) REFERENCES Seasons(season_id) ON DELETE CASCADE
 );

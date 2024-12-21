@@ -44,3 +44,20 @@ def seasons():
     # Execute the query and fetch all rows
     seasons= db.session.execute(query).fetchall()
     return render_template("seasons.html", seasons=seasons)
+
+# website/views.py (or any other blueprint)
+
+from flask_login import login_required, current_user
+
+@views.route('/profile')
+@login_required
+def profile():
+    return f"This is {current_user.username}'s profile! Only logged in users can see this."
+
+@views.route('/admin-page')
+@login_required
+def admin_page():
+    if not current_user.is_admin:
+        flash("You do not have permission to view this page.", category='error')
+        return redirect(url_for('views.homepage'))
+    return "Welcome to the admin page!"

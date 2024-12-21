@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %} Teams {% endblock %}
+
+{% block content %}
+    <h1>Team Season Info</h1>
+    <form method="POST" action="{{ url_for('views.team_season_info') }}">
+        <label for="team_select">Choose a team: </label>
+        <select id="team_select" name="team" class="form-select">
+            {% for team in teams %}
+                {%if results[0] and team.team_id == results[0].team_id %}
+                    <option value="{{team.team_id}}" selected>{{team.team_name}}</option>
+                {% else %}
+                    <option value="{{team.team_id}}">{{team.team_name}}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <button type="submit">Fetch</button>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>League</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Playoff Wins</th>
+                <th>Playoff Losses</th>
+                <th>Age</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in results %}
+                <tr>
+                    <td>{{ team.year }}</td>
+                    <td>{{ team.league }}</td>
+                    <td>{{ team.wins }}</td>
+                    <td>{{ team.losses }}</td>
+                    <td>{{ team.playoff_wins }}</td>
+                    <td>{{ team.playoff_losses }}</td>
+                    <td>{{ team.age }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

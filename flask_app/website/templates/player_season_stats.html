@@ -31,5 +31,34 @@
             <th>Value Over Replacement Player (VORP)</th>
         </tr>
     </thead>
+    <tbody>
+        {% for stats in stats %}
+        <tr>
+            <td>{{ stats.Season_ID }}</td>
+            <td>{{ stats.Player_ID }}</td>
+            <td>{{ stats.Games }}</td>
+            <td>{{ stats.PER }}</td>
+            <td>{{ stats.TS_Percent }}</td>
+            <td>{{ stats.X3p_ar }}</td>
+            <td>{{ stats.F_tr }}</td>
+            <td>{{ stats.ORB_Percent }}</td>
+            <td>{{ stats.DRB_Percent }}</td>
+            <td>{{ stats.TRB_Percent }}</td>
+            <td>{{ stats.AST_Percent }}</td>
+            <td>{{ stats.STL_Percent }}</td>
+            <td>{{ stats.BLK_Percent }}</td>
+            <td>{{ stats.TOV_Percent }}</td>
+            <td>{{ stats.USG_Percent }}</td>
+            <td>{{ stats.OWS }}</td>
+            <td>{{ stats.DWS }}</td>
+            <td>{{ stats.WS }}</td>
+            <td>{{ stats.WS_48 }}</td>
+            <td>{{ stats.OBPM }}</td>
+            <td>{{ stats.DBPM }}</td>
+            <td>{{ stats.BPM }}</td>
+            <td>{{ stats.VORP }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 {% endblock %}

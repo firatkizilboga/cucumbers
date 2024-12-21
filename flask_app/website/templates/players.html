@@ -14,6 +14,7 @@
             <th>Last Season</th>
             <th>MVP</th>
             <th>Hall of Fame</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -27,6 +28,12 @@
             <td>{{ player.Last_Seas }}</td>
             <td>{{ player.MVP_Total }}</td>
             <td>{{ player.HOF }}</td>
+            <td>
+                <a href="{{ url_for('views.edit_player', player_id=player.Player_ID) }}" class="btn btn-warning">Edit</a>
+                <form action="{{ url_for('views.delete_player', player_id=player.Player_ID) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

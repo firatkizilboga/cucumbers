@@ -7,7 +7,7 @@
         <label for="team_select">Choose a team: </label>
         <select id="team_select" name="team" class="form-select">
             {% for team in teams %}
-                {%if team.team_id == results[0].team_id %}
+                {%if results[0] and team.team_id == results[0].team_id %}
                     <option value="{{team.team_id}}" selected>{{team.team_name}}</option>
                 {% else %}
                     <option value="{{team.team_id}}">{{team.team_name}}</option>

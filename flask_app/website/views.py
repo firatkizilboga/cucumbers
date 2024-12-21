@@ -36,4 +36,11 @@ def teams():
 
 @views.route('/seasons')
 def seasons():
-    return render_template("seasons.html")
+    query = text("""
+    SELECT * 
+    FROM Seasons ;
+    """)
+
+    # Execute the query and fetch all rows
+    seasons= db.session.execute(query).fetchall()
+    return render_template("seasons.html", seasons=seasons)

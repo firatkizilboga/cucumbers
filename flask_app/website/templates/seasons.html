@@ -1,23 +1,28 @@
 {% extends "base.html" %}
-
 {% block title %} Seasons {% endblock %}
 
 {% block content %}
-    <h1>Seasons Placeholder</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Season</th>
-                <th>Champion</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for season in seasons %}
-                <tr>
-                    <td>{{season.season}}</td>
-                    <td>{{season.champion}}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<h1>Seasons</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Season ID</th>
+            <th>Year</th>
+            <th>Winner Team ID</th>
+            <th>Number of Players</th>
+            <th>Number of Teams</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for season in seasons %}
+        <tr>
+            <td>{{ season.season_id }}</td>
+            <td>{{ season.year }}</td>
+            <td>{{ season.season_winner_team_id }}</td>
+            <td>{{ season.num_players_in_season }}</td>
+            <td>{{ season.num_teams_in_season }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

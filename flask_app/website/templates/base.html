@@ -27,7 +27,20 @@
             <div class="collapse navbar-collapse" id="navbar">
                 <div class="navbar-nav">
                     <a href="/" class="nav-item nav-link" id="homepage">Home</a>
-                    <a href="/teams" class="nav-item nav-link" id="teams">Teams</a>
+
+                    <!-- Team tables dropdown menu -->
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="teamsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Teams
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="teamsDropdown">
+                            <a href="/teams" class="dropdown-item" id="players">Team List</a>
+                            <a href="/team_season_info" class="dropdown-item" id="team_season_info">Team Season Info</a>
+                            <a href="/team_season_stats" class="dropdown-item" id="team_season_stats">Team Season Stats</a>
+                        </div>
+                        
+                    </div>
+
 
                     <!-- player tables dropdown menu -->
                     <div class="nav-item dropdown">
@@ -39,6 +52,7 @@
                             <a href="/player_season_stats" class="dropdown-item" id="player_season_stats">Player Season Stats</a>
                             <a href="/player_season_info" class="dropdown-item" id="player_season_info">Player Season Info</a>
                         </div>
+                        
                     </div>
 
                     <a href="/seasons" class="nav-item nav-link" id="seasons">Seasons</a>

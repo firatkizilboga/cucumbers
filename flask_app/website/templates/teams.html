@@ -2,21 +2,21 @@
 {% block title %} Teams {% endblock %}
 
 {% block content %}
-    <h1>Teams Placeholder</h1>
+    <h1>Teams</h1>
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Team</th>
-                <th>City</th>
-                <th>State</th>
+                <th>Abbreviations Used</th>
             </tr>
         </thead>
         <tbody>
             {% for team in teams %}
                 <tr>
-                    <td>{{team.team}}</td>
-                    <td>{{team.city}}</td>
-                    <td>{{team.state}}</td>
+                    <td>{{team.team_id}}</td>
+                    <td>{{team.team_name}}</td>
+                    <td>{{team.team_abbreviation}}</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -14,17 +14,26 @@ def players():
     query = text("""
     SELECT * 
     FROM Players
+    LIMIT 3
     """)
 
     # Execute the query and fetch all rows
     players = db.session.execute(query).fetchall()
-    print(players)
 
     return render_template("players.html", players=players)
 
 @views.route('/player_season_stats')
 def player_season_stats():
-    return render_template("player_season_stats.html")
+    query = text("""
+    SELECT * 
+    FROM Player_Season_Stats
+    LIMIT 3
+    """)
+
+    # Execute the query and fetch all rows
+    player_season_stats = db.session.execute(query).fetchall()
+    
+    return render_template("player_season_stats.html", stats=player_season_stats)
 
 @views.route('/player_season_info')
 def player_season_info():

@@ -6,6 +6,7 @@ WITH STEP1 AS (
     FROM Player_Season_Info
     GROUP BY 1
 )
+
 select season_year,
     Teams.team_id,
     num_players_in_season,

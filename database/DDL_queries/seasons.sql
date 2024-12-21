@@ -1,8 +1,8 @@
 DROP TABLE IF EXISTS Seasons;
 
 CREATE TABLE Seasons (
-    season_id INT PRIMARY KEY,
-    year DATE,
+    season_id INT PRIMARY KEY AUTO_INCREMENT,
+    year INT,
     season_winner_team_id INT,
     num_players_in_season INT,
     num_teams_in_season INT

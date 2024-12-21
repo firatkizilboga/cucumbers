@@ -29,4 +29,65 @@ LEFT JOIN (
 ) AS mvp_counts
 ON pci.Player_ID = mvp_counts.Player_ID;
 
-SELECT * FROM Players
+-- SELECT * FROM Players;
+
+INSERT INTO Player_Season_Stats (
+  Season_ID, Player_ID, Games, PER, TS_Percent, X3p_ar, F_tr, ORB_Percent, DRB_Percent, TRB_Percent,
+  AST_Percent, STL_Percent, BLK_Percent, TOV_Percent, USG_Percent, OWS, DWS, WS, WS_48, OBPM, DBPM, BPM, VORP
+)
+SELECT
+  s.season_id,
+  p.player_id,
+  a.g,
+  a.per,
+  a.ts_percent,
+  a.x3p_ar,
+  a.f_tr,
+  a.orb_percent,
+  a.drb_percent,
+  a.trb_percent,
+  a.ast_percent,
+  a.stl_percent,
+  a.blk_percent,
+  a.tov_percent,
+  a.usg_percent,
+  a.ows,
+  a.dws,
+  a.ws,
+  a.ws_48,
+  a.obpm,
+  a.dbpm,
+  a.bpm,
+  a.vorp
+FROM Advanced a
+JOIN Seasons s ON a.season = s.year
+JOIN Players p ON a.player_id = p.player_id;
+
+SELECT * FROM Player_Season_Stats;
+
+INSERT INTO Player_Info_Per_Season (
+  Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP
+)
+SELECT
+  s.season_id,
+  p.Player_ID,
+  p.Player,
+  adv.lg AS League,
+  t.team_id,
+  adv.pos AS Position,
+  adv.age AS Age,
+  adv.experience AS Experience,
+  CASE 
+    WHEN pas.winner = TRUE AND pas.award = 'nba mvp' THEN TRUE 
+    ELSE FALSE 
+  END AS MVP
+FROM Advanced AS adv
+JOIN Players AS p
+  ON p.Player_ID = adv.player_id
+JOIN Seasons AS s
+  ON s.year = adv.season
+JOIN Teams AS t
+  ON adv.tm LIKE CONCAT('%', t.team_abbreviation, '%')
+LEFT JOIN Player_Award_Shares pas
+  ON adv.player_id = pas.Player_ID 
+  AND adv.season = pas.season;

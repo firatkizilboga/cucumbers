@@ -25,6 +25,6 @@ CREATE TABLE Player_Season_Stats (
     BPM FLOAT,
     VORP FLOAT,
     PRIMARY KEY (Season_ID, Player_ID),
-    FOREIGN KEY (Season_ID) REFERENCES Seasons (Season_ID),
-    FOREIGN KEY (Player_ID) REFERENCES Players (Player_ID)
+    FOREIGN KEY (Season_ID) REFERENCES Seasons (Season_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Player_ID) REFERENCES Players (Player_ID) ON DELETE CASCADE
 );

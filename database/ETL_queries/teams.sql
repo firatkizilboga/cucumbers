@@ -1,11 +1,10 @@
-INSERT INTO Teams (team_name, team_abbreviation) 
-SELECT DISTINCT
-    team,
-    abbreviation
+INSERT INTO Teams (team_name, team_abbreviation)
+SELECT 
+    team AS team_name,
+    GROUP_CONCAT(DISTINCT abbreviation ORDER BY abbreviation ASC SEPARATOR ', ') AS team_abbreviation
 FROM Team_Abbrev
-WHERE 1=1
-    AND abbreviation IS NOT NULL
-    AND team IS NOT NULL
-    ;
+WHERE abbreviation IS NOT NULL AND team IS NOT NULL
+GROUP BY team;
+
 
 SELECT * FROM Teams;

@@ -1,10 +1,14 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text  # Import text for raw SQL queries
-from .utils import validate_player_data
-
+from flask_login import login_required, current_user
 views = Blueprint('views', __name__)
 db = SQLAlchemy()
+
+from sqlalchemy import text  # Import text for raw SQL queries
+from .utils import validate_player_data
+from .auth import admin_required
+
+
 
 @views.route('/')
 def homepage():
@@ -167,9 +171,7 @@ def seasons():
     seasons= db.session.execute(query).fetchall()
     return render_template("seasons.html", seasons=seasons)
 
-# website/views.py (or any other blueprint)
 
-from flask_login import login_required, current_user
 
 @views.route('/profile')
 @login_required
@@ -177,7 +179,7 @@ def profile():
     return f"This is {current_user.username}'s profile! Only logged in users can see this."
 
 @views.route('/admin-page')
-@login_required
+@admin_required
 def admin_page():
     if not current_user.is_admin:
         flash("You do not have permission to view this page.", category='error')

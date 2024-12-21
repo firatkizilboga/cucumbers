@@ -1,12 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, url_for,abort
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField
 from wtforms.validators import DataRequired
 from passlib.hash import pbkdf2_sha256 as hasher
 from sqlalchemy import text
+from functools import wraps
 
-from .views import db
+try:
+    db = db
+except NameError:
+    from .views import db
 
 auth = Blueprint('auth', __name__)
 
@@ -165,3 +169,22 @@ def register():
         return redirect(url_for('auth.login'))
 
     return render_template('register.html', form=form)
+
+def admin_required(route_func):
+    """
+    A decorator that first requires the user to be logged in,
+    then checks if 'is_admin' is True on the current_user.
+    If not, abort or redirect.
+    """
+    @wraps(route_func)
+    @login_required  # ensures the user is authenticated
+    def wrapper(*args, **kwargs):
+        if not current_user.is_admin:
+
+            # Option 2: Flash a message and redirect
+            flash("You do not have permission to view this page.", "error")
+            return redirect(url_for("views.homepage"))
+
+        # If admin, proceed to the wrapped route
+        return route_func(*args, **kwargs)
+    return wrapper

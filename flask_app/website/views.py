@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text  # Import text for raw SQL queries
 
 views = Blueprint('views', __name__)
+db = SQLAlchemy()
 
 @views.route('/')
 def homepage():
@@ -8,7 +11,16 @@ def homepage():
 
 @views.route('/players')
 def players():
-    return render_template("players.html")
+    query = text("""
+    SELECT * 
+    FROM Players
+    """)
+
+    # Execute the query and fetch all rows
+    players = db.session.execute(query).fetchall()
+    print(players)
+
+    return render_template("players.html", players=players)
 
 @views.route('/player_season_stats')
 def player_season_stats():

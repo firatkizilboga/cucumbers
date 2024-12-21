@@ -61,7 +61,10 @@ SELECT
   a.vorp
 FROM Advanced a
 JOIN Seasons s ON a.season = s.year
-JOIN Players p ON a.player_id = p.player_id;
+JOIN Players p ON a.player_id = p.player_id
+WHERE g = (
+	SELECT max(g) FROM Advanced a1 WHERE a1.player_id = a.player_id and a1.season = s.year
+);
 
 SELECT * FROM Player_Season_Stats;
 
@@ -90,4 +93,7 @@ JOIN Teams AS t
   ON adv.tm LIKE CONCAT('%', t.team_abbreviation, '%')
 LEFT JOIN Player_Award_Shares pas
   ON adv.player_id = pas.Player_ID 
-  AND adv.season = pas.season;
+  AND adv.season = pas.season
+WHERE g = (
+	SELECT max(g) FROM Advanced a1 WHERE a1.player_id = adv.player_id and a1.season = s.year
+);

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %} Add Season {% endblock %}
+
+{% block content %}
+<h1>Add New Season</h1>
+
+{% if get_flashed_messages() %}
+    <ul class="flashes">
+        {% for message in get_flashed_messages(with_categories=true) %}
+            <li class="{{ message[0] }}">{{ message[1] }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="Year">Year</label>
+        <input type="number" class="form-control" id="Year" name="Year" required>
+    </div>
+    <div class="form-group">
+        <label for="Winner_Team_ID">Winner Team ID</label>
+        <input type="number" class="form-control" id="Winner_Team_ID" name="Winner_Team_ID" required>
+    </div>
+    <div class="form-group">
+        <label for="Num_Players">Number of Players</label>
+        <input type="number" class="form-control" id="Num_Players" name="Num_Players">
+    </div>
+    <div class="form-group">
+        <label for="Num_Teams">Number of Teams</label>
+        <input type="number" class="form-control" id="Num_Teams" name="Num_Teams">
+    </div>
+    <button type="submit" class="btn btn-success">Add Season</button>
+</form>
+{% endblock %}

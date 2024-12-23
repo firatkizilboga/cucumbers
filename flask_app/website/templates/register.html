@@ -5,7 +5,6 @@
 <h2>Register</h2>
 <form action="{{ url_for('auth.register') }}" method="POST">
     {{ form.csrf_token }}
-
     <div>
         {{ form.username.label }}
         {{ form.username(size=20) }}

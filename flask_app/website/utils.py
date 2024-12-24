@@ -1,3 +1,6 @@
+from sqlalchemy import text
+from .views import db
+
 def validate_player_data(player_name, birth_year, num_seasons, first_seas, last_seas, mvp_total):
   if not player_name or player_name.strip() == "":
     return False, 'Player Name cannot be empty'
@@ -20,4 +23,48 @@ def validate_player_data(player_name, birth_year, num_seasons, first_seas, last_
   if mvp_total and int(mvp_total) < 0:
     return False, 'MVP Total cannot be negative'
   
+  return True, None
+
+
+def validate_player_stats(season_id, player_id):
+  season_exists_query = text("SELECT COUNT(*) FROM Seasons WHERE season_id = :season_id")
+  result_season = db.session.execute(season_exists_query, {"season_id": season_id}).scalar()
+
+  if result_season == 0:
+    return False, 'Season ID does not exist'
+  
+  player_exists_query = text("SELECT COUNT(*) FROM Players WHERE Player_ID = :player_id")
+  result_player = db.session.execute(player_exists_query, {"player_id": player_id}).scalar()
+
+  if result_player == 0:
+    return False, 'Player ID does not exist'
+  
+  return True, None
+
+
+def validate_player_info(season_id, player_id, team_id, age, experience):
+  season_exists_query = text("SELECT COUNT(*) FROM Seasons WHERE season_id = :season_id")
+  result_season = db.session.execute(season_exists_query, {"season_id": season_id}).scalar()
+
+  if result_season == 0:
+    return False, 'Season ID does not exist'
+  
+  player_exists_query = text("SELECT COUNT(*) FROM Players WHERE Player_ID = :player_id")
+  result_player = db.session.execute(player_exists_query, {"player_id": player_id}).scalar()
+
+  if result_player == 0:
+    return False, 'Player ID does not exist'
+  
+  team_exists_query = text("SELECT COUNT(*) FROM Teams WHERE Team_ID = :team_id")
+  result_team = db.session.execute(team_exists_query, {"team_id": team_id}).scalar()
+
+  if result_team == 0:
+    return False, 'Team ID does not exist'
+
+  if age and int(age) < 0:
+    return False, 'Age cannot be negative'
+  
+  if experience and int(experience) < 0:
+    return False, 'Experience cannot be negative'
+
   return True, None

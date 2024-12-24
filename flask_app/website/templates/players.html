@@ -2,12 +2,12 @@
 {% block title %} Players {% endblock %}
 
 {% block content %}
+<h1>Players</h1>
 
 {% if current_user.is_admin %}
-    <a href="{{ url_for('views.add_player') }}" class="btn btn-success mb-3">Add Player</a>
+    <a href="{{ url_for('views.add_player') }}" class="btn btn-primary mb-3">Add Player</a>
 {% endif %}
 
-<h1>Players</h1>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -37,9 +37,9 @@
             <td>{{ player.HOF }}</td>
             <td>
                 {% if current_user.is_admin %}
-                <a href="{{ url_for('views.edit_player', player_id=player.Player_ID) }}" class="btn btn-warning">Edit</a>
+                <a href="{{ url_for('views.edit_player', player_id=player.Player_ID) }}" class="btn btn-sm btn-warning">Edit</a>
                 <form action="{{ url_for('views.delete_player', player_id=player.Player_ID) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                 </form>
                 {% endif %}
             </td>

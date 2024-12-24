@@ -3,6 +3,12 @@
 
 {% block content %}
 <h1>Player Season Info</h1>
+
+{% if current_user.is_admin %}
+  <a href="{{ url_for('views.add_player_season_info') }}" class="btn btn-primary mb-3">Add Player Season Info</a>
+{% endif %}
+
+
 <table class="table table-striped">
   <thead>
     <tr>
@@ -15,7 +21,33 @@
       <th>Age</th>
       <th>Experience</th>
       <th>MVP</th>
+      {% if current_user.is_admin %}
+      <th>Actions</th>
+      {% endif %}
     </tr>
   </thead>
+  <tbody>
+    {% for info in information %}
+    <tr>
+      <td>{{ info.Season_ID }}</td>
+      <td>{{ info.Player_ID }}</td>
+      <td>{{ info.Player_Name }}</td>
+      <td>{{ info.League }}</td>
+      <td>{{ info.Team_ID }}</td>
+      <td>{{ info.Position }}</td>
+      <td>{{ info.Age }}</td>
+      <td>{{ info.Experience }}</td>
+      <td>{{ info.MVP }}</td>
+      {% if current_user.is_admin %}
+      <td>
+        <a href="{{ url_for('views.edit_player_season_info', season_id=info.Season_ID, player_id=info.Player_ID) }}" class="btn btn-sm btn-warning mr-2">Edit</a>
+        <form action="{{ url_for('views.delete_player_season_info', season_id=info.Season_ID, player_id=info.Player_ID) }}" method="POST" style="display:inline;">
+          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+        </form>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 {% endblock %}

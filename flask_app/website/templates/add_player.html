@@ -5,11 +5,9 @@
 <h1>Add Player</h1>
 
 {% if get_flashed_messages() %}
-    <ul>
-        {% for message in get_flashed_messages() %}
-            <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
+  <ul>
+    <li>{{ get_flashed_messages()[-1] }}</li>
+  </ul>
 {% endif %}
 
 <form method="POST">

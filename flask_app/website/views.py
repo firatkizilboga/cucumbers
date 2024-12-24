@@ -5,7 +5,7 @@ views = Blueprint("views", __name__)
 db = SQLAlchemy()
 
 from sqlalchemy import text  # Import text for raw SQL queries
-from .utils import validate_player_data
+from .utils import validate_player_data, validate_player_stats, validate_player_info
 from .auth import admin_required
 
 from flask_login import login_user, logout_user, login_required, current_user
@@ -32,6 +32,9 @@ def admin_page():
         return redirect(url_for("views.homepage"))
     return "Welcome to the admin page!"
 
+# -----------------------
+# Players views
+# -----------------------
 
 @views.route("/players")
 def players():
@@ -203,10 +206,367 @@ def player_season_stats():
     return render_template("player_season_stats.html", stats=player_season_stats)
 
 
+@views.route("/add_player_season_stats", methods=["GET", "POST"])
+@admin_required
+def add_player_season_stats():
+    if request.method == "POST":
+        # Get values from the form
+        season_id = request.form.get("Season_ID")
+        player_id = request.form.get("Player_ID")
+        games = request.form.get("Games")
+        per = request.form.get("PER")
+        ts_percent = request.form.get("TS_Percent")
+        x3p_ar = request.form.get("X3p_ar")
+        f_tr = request.form.get("F_tr")
+        orb_percent = request.form.get("ORB_Percent")
+        drb_percent = request.form.get("DRB_Percent")
+        trb_percent = request.form.get("TRB_Percent")
+        ast_percent = request.form.get("AST_Percent")
+        stl_percent = request.form.get("STL_Percent")
+        blk_percent = request.form.get("BLK_Percent")
+        tov_percent = request.form.get("TOV_Percent")
+        usg_percent = request.form.get("USG_Percent")
+        ows = request.form.get("OWS")
+        dws = request.form.get("DWS")
+        ws = request.form.get("WS")
+        ws_48 = request.form.get("WS_48")
+        obpm = request.form.get("OBPM")
+        dbpm = request.form.get("DBPM")
+        bpm = request.form.get("BPM")
+        vorp = request.form.get("VORP")
+
+        variables = [season_id, player_id, games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
+                     stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp]
+
+        for i, value in enumerate(variables):
+            if value == '':
+                variables[i] = None
+
+        (season_id, player_id, games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
+         stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp) = variables
+
+        is_valid, error_message = validate_player_stats(season_id, player_id)
+
+        if not is_valid:
+            flash(error_message, "danger")
+            return render_template("add_player_season_stats.html")
+
+        # Insert new player season stats into the database
+        query_insert = text("""
+            INSERT INTO Player_Season_Stats (
+                Season_ID, Player_ID, Games, PER, TS_Percent, X3p_ar, F_tr, ORB_Percent, DRB_Percent, TRB_Percent, AST_Percent, 
+                STL_Percent, BLK_Percent, TOV_Percent, USG_Percent, OWS, DWS, WS, WS_48, OBPM, DBPM, BPM, VORP
+            ) VALUES (
+                :season_id, :player_id, :games, :per, :ts_percent, :x3p_ar, :f_tr, :orb_percent, :drb_percent, :trb_percent, :ast_percent, 
+                :stl_percent, :blk_percent, :tov_percent, :usg_percent, :ows, :dws, :ws, :ws_48, :obpm, :dbpm, :bpm, :vorp
+            )
+        """)
+
+        db.session.execute(
+            query_insert,
+            {
+                "season_id": season_id,
+                "player_id": player_id,
+                "games": games,
+                "per": per,
+                "ts_percent": ts_percent,
+                "x3p_ar": x3p_ar,
+                "f_tr": f_tr,
+                "orb_percent": orb_percent,
+                "drb_percent": drb_percent,
+                "trb_percent": trb_percent,
+                "ast_percent": ast_percent,
+                "stl_percent": stl_percent,
+                "blk_percent": blk_percent,
+                "tov_percent": tov_percent,
+                "usg_percent": usg_percent,
+                "ows": ows,
+                "dws": dws,
+                "ws": ws,
+                "ws_48": ws_48,
+                "obpm": obpm,
+                "dbpm": dbpm,
+                "bpm": bpm,
+                "vorp": vorp,
+            }
+        )
+        db.session.commit()
+
+        flash('New Player Season Stats added successfully', 'success')
+        return redirect(url_for("views.player_season_stats"))
+
+    return render_template("add_player_season_stats.html")
+
+
+@views.route("/delete_player_season_stats/<int:season_id>/<int:player_id>", methods=["POST"])
+@admin_required
+def delete_player_season_stats(season_id, player_id):
+    # Execute the DELETE SQL query using both Season_ID and Player_ID
+    query = text("""
+        DELETE FROM Player_Season_Stats
+        WHERE Season_ID = :season_id AND Player_ID = :player_id
+    """)
+    db.session.execute(query, {"season_id": season_id, "player_id": player_id})
+
+    db.session.commit()
+
+    return redirect(url_for("views.player_season_stats"))
+
+
+@views.route("/edit_player_season_stats/<int:season_id>/<int:player_id>", methods=["GET", "POST"])
+@admin_required
+def edit_player_season_stats(season_id, player_id):
+    # Retrieve the player season stats details
+    query = text("SELECT * FROM Player_Season_Stats WHERE Season_ID = :season_id AND Player_ID = :player_id")
+    stats = db.session.execute(query, {"season_id": season_id, "player_id": player_id}).fetchone()
+
+    if request.method == "POST":
+        # Get updated values from the form
+        games = request.form.get("Games")
+        per = request.form.get("PER")
+        ts_percent = request.form.get("TS_Percent")
+        x3p_ar = request.form.get("X3p_ar")
+        f_tr = request.form.get("F_tr")
+        orb_percent = request.form.get("ORB_Percent")
+        drb_percent = request.form.get("DRB_Percent")
+        trb_percent = request.form.get("TRB_Percent")
+        ast_percent = request.form.get("AST_Percent")
+        stl_percent = request.form.get("STL_Percent")
+        blk_percent = request.form.get("BLK_Percent")
+        tov_percent = request.form.get("TOV_Percent")
+        usg_percent = request.form.get("USG_Percent")
+        ows = request.form.get("OWS")
+        dws = request.form.get("DWS")
+        ws = request.form.get("WS")
+        ws_48 = request.form.get("WS_48")
+        obpm = request.form.get("OBPM")
+        dbpm = request.form.get("DBPM")
+        bpm = request.form.get("BPM")
+        vorp = request.form.get("VORP")
+
+        variables = [games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
+                     stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp]
+
+        for i, value in enumerate(variables):
+            if value == '':
+                variables[i] = None
+
+        (games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, stl_percent, 
+         blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp) = variables
+        
+        # Update the player season stats in the database
+        query_update = text("""
+            UPDATE Player_Season_Stats
+            SET Games = :games,
+                PER = :per,
+                TS_Percent = :ts_percent,
+                X3p_ar = :x3p_ar,
+                F_tr = :f_tr,
+                ORB_Percent = :orb_percent,
+                DRB_Percent = :drb_percent,
+                TRB_Percent = :trb_percent,
+                AST_Percent = :ast_percent,
+                STL_Percent = :stl_percent,
+                BLK_Percent = :blk_percent,
+                TOV_Percent = :tov_percent,
+                USG_Percent = :usg_percent,
+                OWS = :ows,
+                DWS = :dws,
+                WS = :ws,
+                WS_48 = :ws_48,
+                OBPM = :obpm,
+                DBPM = :dbpm,
+                BPM = :bpm,
+                VORP = :vorp
+            WHERE Season_ID = :season_id AND Player_ID = :player_id
+        """)
+
+        db.session.execute(
+            query_update,
+            {
+                "games": games,
+                "per": per,
+                "ts_percent": ts_percent,
+                "x3p_ar": x3p_ar,
+                "f_tr": f_tr,
+                "orb_percent": orb_percent,
+                "drb_percent": drb_percent,
+                "trb_percent": trb_percent,
+                "ast_percent": ast_percent,
+                "stl_percent": stl_percent,
+                "blk_percent": blk_percent,
+                "tov_percent": tov_percent,
+                "usg_percent": usg_percent,
+                "ows": ows,
+                "dws": dws,
+                "ws": ws,
+                "ws_48": ws_48,
+                "obpm": obpm,
+                "dbpm": dbpm,
+                "bpm": bpm,
+                "vorp": vorp,
+                "season_id": season_id,
+                "player_id": player_id,
+            }
+        )
+        db.session.commit()
+
+        flash('Player Season Stats updated successfully', 'success')
+        return redirect(url_for("views.player_season_stats", season_id=season_id, player_id=player_id))
+
+    return render_template("edit_player_season_stats.html", stats=stats)
+
+
 @views.route("/player_season_info")
 def player_season_info():
-    return render_template("player_season_info.html")
+    query = text("""
+    SELECT * 
+    FROM Player_Info_Per_Season
+    LIMIT 3
+    """)
 
+    # Execute the query and fetch all rows
+    player_season_info = db.session.execute(query).fetchall()
+    
+    return render_template("player_season_info.html", information=player_season_info)
+
+
+@views.route("/add_player_season_info", methods=["GET", "POST"])
+@admin_required
+def add_player_season_info():
+    if request.method == "POST":
+        # Get the form data
+        season_id = request.form.get("Season_ID")
+        player_id = request.form.get("Player_ID")
+        player_name = request.form.get("Player_Name")
+        league = request.form.get("League")
+        team_id = request.form.get("Team_ID")
+        position = request.form.get("Position")
+        age = request.form.get("Age")
+        experience = request.form.get("Experience")
+        mvp = request.form.get("MVP") == "True"
+
+        if age == "":
+            age = None
+        if experience == "":
+            experience = None
+
+        is_valid, error_message = validate_player_info(season_id, player_id, team_id, age, experience)
+
+        if not is_valid:
+            flash(error_message, "danger")
+            return render_template("add_player_season_info.html")
+
+        # Insert the new player season info into the database
+        query_insert = text("""
+            INSERT INTO Player_Info_Per_Season (Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP)
+            VALUES (:season_id, :player_id, :player_name, :league, :team_id, :position, :age, :experience, :mvp)
+        """)
+        
+        db.session.execute(
+            query_insert,
+            {
+                "season_id": season_id,
+                "player_id": player_id,
+                "player_name": player_name,
+                "league": league,
+                "team_id": team_id,
+                "position": position,
+                "age": age,
+                "experience": experience,
+                "mvp": mvp
+            }
+        )
+        db.session.commit()
+
+        return redirect(url_for("views.player_season_info"))
+
+    return render_template("add_player_season_info.html")
+
+
+@views.route("/delete_player_season_info/<int:season_id>/<int:player_id>", methods=["POST"])
+@admin_required
+def delete_player_season_info(season_id, player_id):
+    # Execute the DELETE SQL query directly
+    query = text("""
+        DELETE FROM Player_Info_Per_Season
+        WHERE Season_ID = :season_id AND Player_ID = :player_id
+    """)
+    db.session.execute(query, {"season_id": season_id, "player_id": player_id})
+
+    db.session.commit()
+
+    return redirect(url_for("views.player_season_info"))
+
+
+@views.route("/edit_player_season_info/<int:season_id>/<int:player_id>", methods=["GET", "POST"])
+@admin_required
+def edit_player_season_info(season_id, player_id):
+    # Retrieve the player season info details
+    query = text("""
+        SELECT * FROM Player_Info_Per_Season 
+        WHERE Season_ID = :season_id AND Player_ID = :player_id
+    """)
+    info = db.session.execute(query, {"season_id": season_id, "player_id": player_id}).fetchone()
+
+    if request.method == "POST":
+        # Get updated values from the form
+        player_name = request.form.get("Player_Name")
+        league = request.form.get("League")
+        team_id = request.form.get("Team_ID")
+        position = request.form.get("Position")
+        age = request.form.get("Age")
+        experience = request.form.get("Experience")
+        mvp = request.form.get("MVP") == "True"  # Convert to boolean
+        
+        if age == "":
+            age = None
+        if experience == "":
+            experience = None
+        
+        is_valid, error_message = validate_player_info(season_id, player_id, team_id, age, experience)
+
+        if not is_valid:
+            flash(error_message, "danger")
+            return render_template("edit_player_season_info.html", info=info)
+
+        # Update the player season info in the database
+        query_update = text("""
+            UPDATE Player_Info_Per_Season
+            SET Player_Name = :player_name,
+                League = :league,
+                Team_ID = :team_id,
+                Position = :position,
+                Age = :age,
+                Experience = :experience,
+                MVP = :mvp
+            WHERE Season_ID = :season_id AND Player_ID = :player_id
+        """)
+        
+        db.session.execute(
+            query_update,
+            {
+                "player_name": player_name,
+                "league": league,
+                "team_id": team_id,
+                "position": position,
+                "age": age,
+                "experience": experience,
+                "mvp": mvp,
+                "season_id": season_id,
+                "player_id": player_id,
+            }
+        )
+        db.session.commit()
+
+        return redirect(url_for("views.player_season_info"))
+
+    return render_template("edit_player_season_info.html", info=info)
+
+
+# -----------------------
+# Teams views
+# -----------------------
 
 @views.route("/teams")
 def teams():
@@ -255,6 +615,9 @@ def team_season_info():
             results = []
     return render_template("team_season_info.html", teams=all_teams, results=results)
 
+# -----------------------
+# Seasons & Game Shots views
+# -----------------------
 
 @views.route("/seasons")
 def seasons():

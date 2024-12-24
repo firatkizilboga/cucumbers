@@ -68,8 +68,46 @@ WHERE g = (
 
 SELECT * FROM Player_Season_Stats;
 
+-- INSERT INTO Player_Info_Per_Season (
+--   Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP
+-- )
+-- SELECT
+--   s.season_id,
+--   p.Player_ID,
+--   p.Player,
+--   adv.lg AS League,
+--   t.team_id,
+--   adv.pos AS Position,
+--   adv.age AS Age,
+--   adv.experience AS Experience,
+--   CASE 
+--     WHEN pas.winner = TRUE AND pas.award = 'nba mvp' THEN TRUE 
+--     ELSE FALSE 
+--   END AS MVP
+-- FROM Advanced AS adv
+-- JOIN Players AS p
+--   ON p.Player_ID = adv.player_id
+-- JOIN Seasons AS s
+--   ON s.year = adv.season
+-- JOIN Teams AS t
+--   ON adv.tm LIKE CONCAT('%', t.team_abbreviation, '%')
+-- LEFT JOIN Player_Award_Shares pas
+--   ON adv.player_id = pas.Player_ID 
+--   AND adv.season = pas.season
+-- WHERE g = (
+-- 	SELECT max(g) FROM Advanced a1 WHERE a1.player_id = adv.player_id and a1.season = s.year
+-- );
+
 INSERT INTO Player_Info_Per_Season (
-  Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP
+  Season_ID, 
+  Player_ID, 
+  Player_Name, 
+  League, 
+  Team_ID, 
+  Position, 
+  Age, 
+  Experience, 
+  MVP
 )
 SELECT
   s.season_id,
@@ -80,20 +118,34 @@ SELECT
   adv.pos AS Position,
   adv.age AS Age,
   adv.experience AS Experience,
-  CASE 
-    WHEN pas.winner = TRUE AND pas.award = 'nba mvp' THEN TRUE 
-    ELSE FALSE 
+  CASE
+    WHEN adv.is_mvp = 1 THEN TRUE
+    ELSE FALSE
   END AS MVP
-FROM Advanced AS adv
-JOIN Players AS p
+FROM (
+  SELECT 
+    adv.*,
+    CASE
+      WHEN pas.winner = TRUE AND pas.award = 'nba mvp' THEN 1
+      ELSE 0
+    END AS is_mvp,
+    ROW_NUMBER() OVER (
+      PARTITION BY adv.player_id, adv.season 
+      ORDER BY adv.g DESC, 
+        CASE WHEN pas.winner = TRUE AND pas.award = 'nba mvp' THEN 1 ELSE 0 END DESC
+    ) AS rn
+  FROM Advanced AS adv
+  LEFT JOIN Player_Award_Shares pas
+    ON adv.player_id = pas.Player_ID
+    AND adv.season = pas.season
+) AS adv
+JOIN Players AS p 
   ON p.Player_ID = adv.player_id
-JOIN Seasons AS s
+JOIN Seasons AS s 
   ON s.year = adv.season
-JOIN Teams AS t
-  ON adv.tm LIKE CONCAT('%', t.team_abbreviation, '%')
-LEFT JOIN Player_Award_Shares pas
-  ON adv.player_id = pas.Player_ID 
-  AND adv.season = pas.season
-WHERE g = (
-	SELECT max(g) FROM Advanced a1 WHERE a1.player_id = adv.player_id and a1.season = s.year
-);
+JOIN Teams AS t 
+  ON adv.tm = t.team_abbreviation -- Optimized JOIN condition
+WHERE adv.rn = 1;
+
+-- SELECT DISTINCT Position
+-- FROM Player_Info_Per_Season;

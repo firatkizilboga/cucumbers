@@ -58,6 +58,15 @@
                     <a href="/seasons" class="nav-item nav-link" id="seasons">Seasons</a>
                 </div>
             </div>
+            <div class="ml-auto">
+                {% if current_user.is_authenticated %}
+                <span class="navbar-text mr-3">Hello, {{ current_user.username }}!</span>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-success">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register</a>
+                {% endif %}
+            </div>
         </nav>        
 
         <div class="container">

@@ -16,6 +16,23 @@ def homepage():
     return render_template("home.html")
 
 
+@views.route("/profile")
+@login_required
+def profile():
+    return (
+        f"This is {current_user.username}'s profile! Only logged in users can see this."
+    )
+    
+
+@views.route("/admin-page")
+@admin_required
+def admin_page():
+    if not current_user.is_admin:
+        flash("You do not have permission to view this page.", category="error")
+        return redirect(url_for("views.homepage"))
+    return "Welcome to the admin page!"
+
+
 @views.route("/players")
 def players():
     query = text("""
@@ -29,8 +46,70 @@ def players():
 
     return render_template("players.html", players=players)
 
+@views.route("/add_player", methods=["GET", "POST"])
+@admin_required
+def add_player():
+    if request.method == "POST":
+        # Get the form values for the new player
+        player_name = request.form.get("Player")
+        birth_year = request.form.get("Birth_Year")
+        num_seasons = request.form.get("Num_Seasons")
+        first_seas = request.form.get("First_Seas")
+        last_seas = request.form.get("Last_Seas")
+        mvp_total = request.form.get("MVP_Total")
+        hof = True if request.form.get("HOF") == "on" else False
+    
+        if mvp_total == "":
+            mvp_total = None
+        if birth_year == "":
+            birth_year = None
+        if num_seasons == "":
+            num_seasons = None
+        if first_seas == "":
+            first_seas = None
+        if last_seas == "":
+            last_seas = None
+            
+        is_valid, error_message = validate_player_data(
+                player_name, birth_year, num_seasons, first_seas, last_seas, mvp_total
+            )
+
+        if not is_valid:
+            flash(error_message, "error")
+            return redirect(url_for("views.add_player"))
+        
+        query_max_id = text("SELECT MAX(Player_ID) FROM Players")
+        max_player_id = db.session.execute(query_max_id).scalar()
+        new_player_id = max_player_id + 1 if max_player_id else 1
+        
+        query_insert = text("""
+                INSERT INTO Players (Player_ID, Player, Birth_Year, Num_Seasons, First_Seas, Last_Seas, MVP_Total, HOF)
+                VALUES (:player_id, :player_name, :birth_year, :num_seasons, :first_seas, :last_seas, :mvp_total, :hof)
+            """)
+        
+        db.session.execute(
+            query_insert,
+            {
+                "player_id": new_player_id,
+                "player_name": player_name,
+                "birth_year": birth_year,
+                "num_seasons": num_seasons,
+                "first_seas": first_seas,
+                "last_seas": last_seas,
+                "mvp_total": mvp_total,
+                "hof": hof,
+            },
+        )
+        db.session.commit()
+        
+        flash("Player added successfully!", "success")
+        return redirect(url_for("views.players"))
+    
+    return render_template("add_player.html")
+
 
 @views.route("/delete_player/<int:player_id>", methods=["POST"])
+@admin_required
 def delete_player(player_id):
     # Execute the DELETE SQL query directly
     query = text("DELETE FROM Players WHERE Player_ID = :player_id")
@@ -69,6 +148,14 @@ def edit_player(player_id):
         if last_seas == "":
             last_seas = None
 
+        is_valid, error_message = validate_player_data(
+            player_name, birth_year, num_seasons, first_seas, last_seas, mvp_total
+        )
+
+        if not is_valid:
+            flash(error_message, "error")
+            return redirect(url_for("views.edit_player", player_id=player_id))
+
         # Update the player's details in the database
         query_update = text("""
             UPDATE Players
@@ -81,14 +168,6 @@ def edit_player(player_id):
                 HOF = :hof
             WHERE Player_ID = :player_id
         """)
-
-        is_valid, error_message = validate_player_data(
-            birth_year, num_seasons, first_seas, last_seas, mvp_total
-        )
-
-        if not is_valid:
-            flash(error_message, "error")
-            return redirect(url_for("views.edit_player", player_id=player_id))
 
         db.session.execute(
             query_update,
@@ -187,24 +266,6 @@ def seasons():
     # Execute the query and fetch all rows
     seasons = db.session.execute(query).fetchall()
     return render_template("seasons.html", seasons=seasons)
-
-
-@views.route("/profile")
-@login_required
-def profile():
-    return (
-        f"This is {current_user.username}'s profile! Only logged in users can see this."
-    )
-
-
-@views.route("/admin-page")
-@admin_required
-def admin_page():
-    if not current_user.is_admin:
-        flash("You do not have permission to view this page.", category="error")
-        return redirect(url_for("views.homepage"))
-    return "Welcome to the admin page!"
-
 
 @views.route("/delete_season/<int:season_id>", methods=["POST"])
 @admin_required

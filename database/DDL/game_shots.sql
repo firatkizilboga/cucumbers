@@ -65,25 +65,17 @@ CREATE INDEX idx_player_id ON Game_Shots (Player_ID);
 --4. Generate Primary Key
 ALTER TABLE `Game_Shots` ADD COLUMN `shot_id` BIGINT UNSIGNED NULL AFTER `Season_ID`;
 
-WITH ShotNumbers AS (
-         SELECT
-             Game_ID,
-             Season_ID,
-             ROW_NUMBER() OVER (
-                 PARTITION BY Season_ID
-                 ORDER BY Game_Date, Game_ID, Player_ID
-             ) AS rn
-         FROM
-             `Game_Shots`
-     )
-     UPDATE `Game_Shots` g
-     JOIN ShotNumbers s
-         ON g.Game_ID = s.Game_ID AND g.Season_ID = s.Season_ID
-     SET g.shot_id = s.rn;
+
+SET @row_num := -1;
+UPDATE `Game_Shots` 
+SET `shot_id` = (@row_num := @row_num + 1);
+
 
 ALTER TABLE `Game_Shots`
     MODIFY COLUMN `shot_id` INT NOT NULL;
 
 -- 5. Create Primary Key Constraint 
 ALTER TABLE `Game_Shots`
-    ADD PRIMARY KEY (`Season_ID`, `shot_id`);
+    ADD PRIMARY KEY (`shot_id`, `Season_ID`);
+
+

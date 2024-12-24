@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %} Edit Player Season Stats {% endblock %}
+
+{% block content %}
+<h1>Edit Player Season Stats</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+    <li>{{ get_flashed_messages()[-1] }}</li>
+  </ul>
+{% endif %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="Games">Games Played</label>
+        <input type="number" class="form-control" id="Games" name="Games" value="{{ stats.Games }}" required>
+    </div>
+    <div class="form-group">
+        <label for="PER">PER</label>
+        <input type="number" class="form-control" id="PER" name="PER" step="0.1" value="{{ stats.PER }}">
+    </div>
+    <div class="form-group">
+        <label for="TS_Percent">TS Percent</label>
+        <input type="number" class="form-control" id="TS_Percent" name="TS_Percent" step="0.001" value="{{ stats.TS_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="X3p_ar">3P Attempt Rate</label>
+        <input type="number" class="form-control" id="X3p_ar" name="X3p_ar" step="0.001" value="{{ stats.X3p_ar }}">
+    </div>
+    <div class="form-group">
+        <label for="F_tr">Free Throw Rate</label>
+        <input type="number" class="form-control" id="F_tr" name="F_tr" step="0.001" value="{{ stats.F_tr }}">
+    </div>
+    <div class="form-group">
+        <label for="ORB_Percent">Offensive Rebound %</label>
+        <input type="number" class="form-control" id="ORB_Percent" name="ORB_Percent" step="0.1" value="{{ stats.ORB_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="DRB_Percent">Defensive Rebound %</label>
+        <input type="number" class="form-control" id="DRB_Percent" name="DRB_Percent" step="0.1" value="{{ stats.DRB_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="TRB_Percent">Total Rebound %</label>
+        <input type="number" class="form-control" id="TRB_Percent" name="TRB_Percent" step="0.1" value="{{ stats.TRB_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="AST_Percent">Assist %</label>
+        <input type="number" class="form-control" id="AST_Percent" name="AST_Percent" step="0.1" value="{{ stats.AST_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="STL_Percent">Steal %</label>
+        <input type="number" class="form-control" id="STL_Percent" name="STL_Percent" step="0.1" value="{{ stats.STL_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="BLK_Percent">Block %</label>
+        <input type="number" class="form-control" id="BLK_Percent" name="BLK_Percent" step="0.1" value="{{ stats.BLK_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="TOV_Percent">Turnover %</label>
+        <input type="number" class="form-control" id="TOV_Percent" name="TOV_Percent" step="0.1" value="{{ stats.TOV_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="USG_Percent">Usage %</label>
+        <input type="number" class="form-control" id="USG_Percent" name="USG_Percent" step="0.1" value="{{ stats.USG_Percent }}">
+    </div>
+    <div class="form-group">
+        <label for="OWS">Offensive Win Shares</label>
+        <input type="number" class="form-control" id="OWS" name="OWS" step="0.1" value="{{ stats.OWS }}">
+    </div>
+    <div class="form-group">
+        <label for="DWS">Defensive Win Shares</label>
+        <input type="number" class="form-control" id="DWS" name="DWS" step="0.1" value="{{ stats.DWS }}">
+    </div>
+    <div class="form-group">
+        <label for="WS">Total Win Shares</label>
+        <input type="number" class="form-control" id="WS" name="WS" step="0.1" value="{{ stats.WS }}">
+    </div>
+    <div class="form-group">
+        <label for="WS_48">Win Shares per 48</label>
+        <input type="number" class="form-control" id="WS_48" name="WS_48" step="0.001" value="{{ stats.WS_48 }}">
+    </div>
+    <div class="form-group">
+        <label for="OBPM">Offensive Box Plus-Minus</label>
+        <input type="number" class="form-control" id="OBPM" name="OBPM" step="0.1" value="{{ stats.OBPM }}">
+    </div>
+    <div class="form-group">
+        <label for="DBPM">Defensive Box Plus-Minus</label>
+        <input type="number" class="form-control" id="DBPM" name="DBPM" step="0.1" value="{{ stats.DBPM }}">
+    </div>
+    <div class="form-group">
+        <label for="BPM">Box Plus-Minus</label>
+        <input type="number" class="form-control" id="BPM" name="BPM" step="0.1" value="{{ stats.BPM }}">
+    </div>
+    <div class="form-group">
+        <label for="VORP">Value Over Replacement Player (VORP)</label>
+        <input type="number" class="form-control" id="VORP" name="VORP" step="0.1" value="{{ stats.VORP }}">
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Update Player Season Stats</button>
+</form>
+
+{% endblock %}

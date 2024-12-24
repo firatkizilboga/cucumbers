@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %} Edit Player Season Info {% endblock %}
+
+{% block content %}
+<h1>Edit Player Season Info</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+    <li>{{ get_flashed_messages()[-1] }}</li>
+  </ul>
+{% endif %}
+
+<form method="POST">
+    <div class="form-group">
+        <label for="Player_Name">Player Name</label>
+        <input type="text" class="form-control" id="Player_Name" name="Player_Name" value="{{ info.Player_Name }}" required>
+    </div>
+
+    <div class="form-group">
+      <label for="League">League</label>
+      <select class="form-control" id="League" name="League" required>
+          <option value="NBA" {% if info.League == 'NBA' %}selected{% endif %}>NBA</option>
+          <option value="ABA" {% if info.League == 'ABA' %}selected{% endif %}>ABA</option>
+          <option value="BAA" {% if info.League == 'BAA' %}selected{% endif %}>BAA</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+        <label for="Team_ID">Team ID</label>
+        <input type="number" class="form-control" id="Team_ID" name="Team_ID" value="{{ info.Team_ID }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="Position">Position</label>
+        <select multiple class="form-control" id="Position" name="Position" required>
+            <option value="G" {% if info.Position == 'G' %}selected{% endif %}>Guard</option>
+            <option value="C" {% if info.Position == 'C' %}selected{% endif %}>Center</option>
+            <option value="F" {% if info.Position == 'F' %}selected{% endif %}>Forward</option>
+            <option value="SG" {% if info.Position == 'SG' %}selected{% endif %}>Shooting Guard</option>
+            <option value="F-C" {% if info.Position == 'F-C' %}selected{% endif %}>Forward-Center</option>
+            <option value="G-F" {% if info.Position == 'G-F' %}selected{% endif %}>Guard-Forward</option>
+            <option value="C-F" {% if info.Position == 'C-F' %}selected{% endif %}>Center-Forward</option>
+            <option value="PG" {% if info.Position == 'PG' %}selected{% endif %}>Point Guard</option>
+            <option value="PF" {% if info.Position == 'PF' %}selected{% endif %}>Power Forward</option>
+            <option value="F-G" {% if info.Position == 'F-G' %}selected{% endif %}>Forward-Guard</option>
+            <option value="SF" {% if info.Position == 'SF' %}selected{% endif %}>Small Forward</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="Age">Age</label>
+        <input type="number" class="form-control" id="Age" name="Age" value="{{ info.Age }}">
+    </div>
+
+    <div class="form-group">
+        <label for="Experience">Experience</label>
+        <input type="number" class="form-control" id="Experience" name="Experience" value="{{ info.Experience }}">
+    </div>
+
+    <div class="form-group">
+        <label for="MVP">MVP</label>
+        <select class="form-control" id="MVP" name="MVP">
+            <option value="True" {% if info.MVP %}selected{% endif %}>Yes</option>
+            <option value="False" {% if not info.MVP %}selected{% endif %}>No</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+{% endblock %}

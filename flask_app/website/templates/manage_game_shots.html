@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %} Manage Game Shots {% endblock %}
+
+{% block content %}
+<h1>Manage Game Shots</h1>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- Insert Game_Shots -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2>Insert Game Shots</h2>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('views.upload_game_shots') }}" method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="insert_file" class="form-label">Upload CSV File for Insertion</label>
+        <input class="form-control" type="file" id="insert_file" name="insert_file" accept=".csv" required>
+      </div>
+      <button type="submit" class="btn btn-success">Insert Game Shots</button>
+    </form>
+  </div>
+</div>
+
+<!-- Update Game_Shots -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2>Update Game Shots</h2>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('views.update_game_shots') }}" method="POST" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="update_file" class="form-label">Upload CSV File for Updating</label>
+        <input class="form-control" type="file" id="update_file" name="update_file" accept=".csv" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Update Game Shots</button>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Game_Shots -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2>Delete Game Shots</h2>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('views.delete_game_shots') }}" method="POST">
+      <!-- Season Selection -->
+      <div class="mb-3">
+        <label for="delete_season_id" class="form-label">Select Season</label>
+        <select class="form-select" id="delete_season_id" name="delete_season_id" required>
+          <option value="" disabled selected>Select a Season</option>
+          {% for season in seasons %}
+            <option value="{{ season.Season_ID }}">{{ season.year }} (ID: {{ season.Season_ID }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Shot_IDs Input -->
+      <div class="mb-3">
+        <label for="delete_shot_ids" class="form-label">Enter Shot_IDs to Delete (comma-separated)</label>
+        <input type="text" class="form-control" id="delete_shot_ids" name="delete_shot_ids" placeholder="e.g., 1,2,3,4" required>
+      </div>
+
+      <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the specified Game Shots?');">Delete Game Shots</button>
+    </form>
+  </div>
+</div>
+
+<!-- Display Existing Game_Shots -->
+<h2>Existing Game Shots</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Shot ID</th>
+            <th>Game ID</th>
+            <th>Season ID</th>
+            <th>Team ID</th>
+            <th>Player ID</th>
+            <th>Position Group</th>
+            <th>Position</th>
+            <th>Game Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Event Type</th>
+            <th>Shot Made</th>
+            <th>Action Type</th>
+            <th>Shot Type</th>
+            <th>Basic Zone</th>
+            <th>Zone Name</th>
+            <th>Zone Abb</th>
+            <th>Zone Range</th>
+            <th>Loc X</th>
+            <th>Loc Y</th>
+            <th>Shot Distance</th>
+            <th>Quarter</th>
+            <th>Mins Left</th>
+            <th>Secs Left</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for shot in game_shots %}
+        <tr>
+            <td>{{ shot.shot_id }}</td>
+            <td>{{ shot.Game_ID }}</td>
+            <td>{{ shot.Season_ID }}</td>
+            <td>{{ shot.Team_ID }}</td>
+            <td>{{ shot.Player_ID }}</td>
+            <td>{{ shot.Position_Group }}</td>
+            <td>{{ shot.Position }}</td>
+            <td>{{ shot.Game_Date }}</td>
+            <td>{{ shot.Home_Team }}</td>
+            <td>{{ shot.Away_Team }}</td>
+            <td>{{ shot.Event_Type }}</td>
+            <td>{{ "Yes" if shot.Shot_Made else "No" }}</td>
+            <td>{{ shot.Action_Type }}</td>
+            <td>{{ shot.Shot_Type }}</td>
+            <td>{{ shot.Basic_Zone }}</td>
+            <td>{{ shot.Zone_Name }}</td>
+            <td>{{ shot.Zone_Abb }}</td>
+            <td>{{ shot.Zone_Range }}</td>
+            <td>{{ shot.Loc_X }}</td>
+            <td>{{ shot.Loc_Y }}</td>
+            <td>{{ shot.Shot_Distance }}</td>
+            <td>{{ shot.Quarter }}</td>
+            <td>{{ shot.Mins_Left }}</td>
+            <td>{{ shot.Secs_Left }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,5 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask_login import current_user
+from sqlalchemy import text
+from werkzeug.utils import secure_filename
+import csv
+import io
 
 views = Blueprint("views", __name__)
 db = SQLAlchemy()
@@ -318,4 +323,342 @@ def add_season():
     return render_template("add_season.html")
 
 
-# Existing other routes...
+@views.route("/manage_game_shots", methods=["GET"])
+@admin_required
+def manage_game_shots():
+    # Fetch all Game_Shots to display
+    game_shots_query = text("SELECT * FROM Game_Shots limit 100;")
+    game_shots = db.session.execute(game_shots_query).fetchall()
+
+    # Fetch all Seasons for the Season_ID dropdown
+    seasons_query = text("SELECT Season_ID, year FROM Seasons ORDER BY year DESC")
+    seasons = db.session.execute(seasons_query).fetchall()
+
+    return render_template(
+        "manage_game_shots.html", game_shots=game_shots, seasons=seasons
+    )
+
+
+@views.route("/upload_game_shots", methods=["POST"])
+@admin_required
+def upload_game_shots():
+    if "insert_file" not in request.files:
+        flash("No file part for insertion.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    file = request.files["insert_file"]
+    if file.filename == "":
+        flash("No file selected for insertion.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    if not file.filename.lower().endswith(".csv"):
+        flash("Invalid file format for insertion. Please upload a CSV file.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    try:
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.DictReader(stream)
+
+        expected_columns = {
+            "Game_ID",
+            "Season_ID",
+            "Team_ID",
+            "Player_ID",
+            "Position_Group",
+            "Position",
+            "Game_Date",
+            "Home_Team",
+            "Away_Team",
+            "Event_Type",
+            "Shot_Made",
+            "Action_Type",
+            "Shot_Type",
+            "Basic_Zone",
+            "Zone_Name",
+            "Zone_Abb",
+            "Zone_Range",
+            "Loc_X",
+            "Loc_Y",
+            "Shot_Distance",
+            "Quarter",
+            "Mins_Left",
+            "Secs_Left",
+        }
+        if not expected_columns.issubset(set(csv_input.fieldnames)):
+            flash("CSV file is missing required columns for insertion.", "error")
+            return redirect(url_for("views.manage_game_shots"))
+
+        insert_query = text("""
+            INSERT INTO Game_Shots (
+                Game_ID, Season_ID, Team_ID, Player_ID, Position_Group, Position,
+                Game_Date, Home_Team, Away_Team, Event_Type, Shot_Made, Action_Type,
+                Shot_Type, Basic_Zone, Zone_Name, Zone_Abb, Zone_Range,
+                Loc_X, Loc_Y, Shot_Distance, Quarter, Mins_Left, Secs_Left
+            ) VALUES (
+                :Game_ID, :Season_ID, :Team_ID, :Player_ID, :Position_Group, :Position,
+                :Game_Date, :Home_Team, :Away_Team, :Event_Type, :Shot_Made, :Action_Type,
+                :Shot_Type, :Basic_Zone, :Zone_Name, :Zone_Abb, :Zone_Range,
+                :Loc_X, :Loc_Y, :Shot_Distance, :Quarter, :Mins_Left, :Secs_Left
+            )
+        """)
+
+        rows_inserted = 0
+        for row in csv_input:
+            # Data validation and type conversion
+            try:
+                data = {
+                    "Game_ID": int(row["Game_ID"]),
+                    "Season_ID": int(row["Season_ID"]),
+                    "Team_ID": int(row["Team_ID"]),
+                    "Player_ID": int(row["Player_ID"]),
+                    "Position_Group": row["Position_Group"],
+                    "Position": row["Position"],
+                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Home_Team": row["Home_Team"],
+                    "Away_Team": row["Away_Team"],
+                    "Event_Type": row["Event_Type"],
+                    "Shot_Made": row["Shot_Made"].strip().lower()
+                    in ["true", "1", "yes"],
+                    "Action_Type": row["Action_Type"],
+                    "Shot_Type": row["Shot_Type"],
+                    "Basic_Zone": row["Basic_Zone"],
+                    "Zone_Name": row["Zone_Name"],
+                    "Zone_Abb": row["Zone_Abb"],
+                    "Zone_Range": row["Zone_Range"],
+                    "Loc_X": float(row["Loc_X"]),
+                    "Loc_Y": float(row["Loc_Y"]),
+                    "Shot_Distance": float(row["Shot_Distance"]),
+                    "Quarter": int(row["Quarter"]),
+                    "Mins_Left": int(row["Mins_Left"]),
+                    "Secs_Left": int(row["Secs_Left"]),
+                }
+
+                db.session.execute(insert_query, data)
+                rows_inserted += 1
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error inserting row: {e}", "error")
+                return redirect(url_for("views.manage_game_shots"))
+
+        db.session.commit()
+        flash(f"Successfully inserted {rows_inserted} rows into Game_Shots.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred during insertion: {e}", "error")
+
+    return redirect(url_for("views.manage_game_shots"))
+
+
+@views.route("/update_game_shots", methods=["POST"])
+@admin_required
+def update_game_shots():
+    if "update_file" not in request.files:
+        flash("No file part for updating.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    file = request.files["update_file"]
+    if file.filename == "":
+        flash("No file selected for updating.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    if not file.filename.lower().endswith(".csv"):
+        flash("Invalid file format for updating. Please upload a CSV file.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    try:
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.DictReader(stream)
+
+        expected_columns = {
+            "shot_id",
+            "Game_ID",
+            "Season_ID",
+            "Team_ID",
+            "Player_ID",
+            "Position_Group",
+            "Position",
+            "Game_Date",
+            "Home_Team",
+            "Away_Team",
+            "Event_Type",
+            "Shot_Made",
+            "Action_Type",
+            "Shot_Type",
+            "Basic_Zone",
+            "Zone_Name",
+            "Zone_Abb",
+            "Zone_Range",
+            "Loc_X",
+            "Loc_Y",
+            "Shot_Distance",
+            "Quarter",
+            "Mins_Left",
+            "Secs_Left",
+        }
+
+        print(csv_input.fieldnames)
+        if not expected_columns.issubset(set(csv_input.fieldnames)):
+            flash(
+                f"CSV file is missing required columns for updating. {expected_columns - set(csv_input.fieldnames)}",
+                "error",
+            )
+            return redirect(url_for("views.manage_game_shots"))
+
+        update_query = text("""
+            UPDATE Game_Shots SET
+                Game_ID = :Game_ID,
+                Season_ID = :Season_ID,
+                Team_ID = :Team_ID,
+                Player_ID = :Player_ID,
+                Position_Group = :Position_Group,
+                Position = :Position,
+                Game_Date = :Game_Date,
+                Home_Team = :Home_Team,
+                Away_Team = :Away_Team,
+                Event_Type = :Event_Type,
+                Shot_Made = :Shot_Made,
+                Action_Type = :Action_Type,
+                Shot_Type = :Shot_Type,
+                Basic_Zone = :Basic_Zone,
+                Zone_Name = :Zone_Name,
+                Zone_Abb = :Zone_Abb,
+                Zone_Range = :Zone_Range,
+                Loc_X = :Loc_X,
+                Loc_Y = :Loc_Y,
+                Shot_Distance = :Shot_Distance,
+                Quarter = :Quarter,
+                Mins_Left = :Mins_Left,
+                Secs_Left = :Secs_Left
+            WHERE shot_id = :shot_id
+        """)
+
+        rows_updated = 0
+        for row in csv_input:
+            try:
+                shot_id = int(row["shot_id"])
+                data = {
+                    "shot_id": shot_id,
+                    "Game_ID": int(row["Game_ID"]),
+                    "Season_ID": int(row["Season_ID"]),
+                    "Team_ID": int(row["Team_ID"]),
+                    "Player_ID": int(row["Player_ID"]),
+                    "Position_Group": row["Position_Group"],
+                    "Position": row["Position"],
+                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Home_Team": row["Home_Team"],
+                    "Away_Team": row["Away_Team"],
+                    "Event_Type": row["Event_Type"],
+                    "Shot_Made": row["Shot_Made"].strip().lower()
+                    in ["true", "1", "yes"],
+                    "Action_Type": row["Action_Type"],
+                    "Shot_Type": row["Shot_Type"],
+                    "Basic_Zone": row["Basic_Zone"],
+                    "Zone_Name": row["Zone_Name"],
+                    "Zone_Abb": row["Zone_Abb"],
+                    "Zone_Range": row["Zone_Range"],
+                    "Loc_X": float(row["Loc_X"]),
+                    "Loc_Y": float(row["Loc_Y"]),
+                    "Shot_Distance": float(row["Shot_Distance"]),
+                    "Quarter": int(row["Quarter"]),
+                    "Mins_Left": int(row["Mins_Left"]),
+                    "Secs_Left": int(row["Secs_Left"]),
+                }
+
+                result = db.session.execute(update_query, data)
+                if result.rowcount > 0:
+                    rows_updated += result.rowcount
+            except Exception as e:
+                db.session.rollback()
+                flash(
+                    f"Error updating Shot_ID {row.get('Shot_ID', 'Unknown')}: {e}",
+                    "error",
+                )
+                return redirect(url_for("views.manage_game_shots"))
+
+        db.session.commit()
+        flash(f"Successfully updated {rows_updated} rows in Game_Shots.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred during updating: {e}", "error")
+
+    return redirect(url_for("views.manage_game_shots"))
+
+
+# views.py
+
+
+@views.route("/delete_game_shots", methods=["POST"])
+@admin_required
+def delete_game_shots():
+    # Retrieve form data
+    shot_ids_str = request.form.get("delete_shot_ids")
+    season_id = request.form.get("delete_season_id")
+
+    # Validate Season_ID
+    if not season_id:
+        flash("No Season ID provided for deletion.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    try:
+        season_id = int(season_id)
+    except ValueError:
+        flash("Invalid Season ID provided.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    # Validate Shot_IDs
+    if not shot_ids_str:
+        flash("No Shot_IDs provided for deletion.", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    try:
+        # Split the string and convert to integers, removing duplicates
+        shot_ids = list(
+            set(
+                [
+                    int(sid.strip())
+                    for sid in shot_ids_str.split(",")
+                    if sid.strip().isdigit()
+                ]
+            )
+        )
+        if not shot_ids:
+            flash("No valid Shot_IDs provided for deletion.", "error")
+            return redirect(url_for("views.manage_game_shots"))
+    except Exception as e:
+        flash(f"Error processing Shot_IDs: {e}", "error")
+        return redirect(url_for("views.manage_game_shots"))
+
+    try:
+        # Verify that the Season_ID exists
+        season_exists_query = text(
+            "SELECT COUNT(*) FROM Seasons WHERE Season_ID = :season_id"
+        )
+        season_exists = db.session.execute(
+            season_exists_query, {"season_id": season_id}
+        ).scalar()
+        if season_exists == 0:
+            flash("The specified Season ID does not exist.", "error")
+            return redirect(url_for("views.manage_game_shots"))
+
+        # Perform the deletion
+        delete_query = text("""
+            DELETE FROM Game_Shots
+            WHERE Shot_ID IN :shot_ids
+              AND Season_ID = :season_id
+        """)
+
+        result = db.session.execute(
+            delete_query, {"shot_ids": tuple(shot_ids), "season_id": season_id}
+        )
+        db.session.commit()
+
+        # Provide feedback to the user
+        flash(
+            f"Successfully deleted {result.rowcount} Game Shot(s) from Season ID {season_id}.",
+            "success",
+        )
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred during deletion: {e}", "error")
+
+    return redirect(url_for("views.manage_game_shots"))

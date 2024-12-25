@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import current_user
 from sqlalchemy import text
-from werkzeug.utils import secure_filename
 import csv
 import io
 
@@ -27,7 +26,7 @@ def profile():
     return (
         f"This is {current_user.username}'s profile! Only logged in users can see this."
     )
-    
+
 
 @views.route("/admin-page")
 @admin_required
@@ -37,9 +36,11 @@ def admin_page():
         return redirect(url_for("views.homepage"))
     return "Welcome to the admin page!"
 
+
 # -----------------------
 # Players views
 # -----------------------
+
 
 @views.route("/players")
 def players():
@@ -54,6 +55,7 @@ def players():
 
     return render_template("players.html", players=players)
 
+
 @views.route("/add_player", methods=["GET", "POST"])
 @admin_required
 def add_player():
@@ -66,7 +68,7 @@ def add_player():
         last_seas = request.form.get("Last_Seas")
         mvp_total = request.form.get("MVP_Total")
         hof = True if request.form.get("HOF") == "on" else False
-    
+
         if mvp_total == "":
             mvp_total = None
         if birth_year == "":
@@ -77,24 +79,24 @@ def add_player():
             first_seas = None
         if last_seas == "":
             last_seas = None
-            
+
         is_valid, error_message = validate_player_data(
-                player_name, birth_year, num_seasons, first_seas, last_seas, mvp_total
-            )
+            player_name, birth_year, num_seasons, first_seas, last_seas, mvp_total
+        )
 
         if not is_valid:
             flash(error_message, "error")
             return redirect(url_for("views.add_player"))
-        
+
         query_max_id = text("SELECT MAX(Player_ID) FROM Players")
         max_player_id = db.session.execute(query_max_id).scalar()
         new_player_id = max_player_id + 1 if max_player_id else 1
-        
+
         query_insert = text("""
                 INSERT INTO Players (Player_ID, Player, Birth_Year, Num_Seasons, First_Seas, Last_Seas, MVP_Total, HOF)
                 VALUES (:player_id, :player_name, :birth_year, :num_seasons, :first_seas, :last_seas, :mvp_total, :hof)
             """)
-        
+
         db.session.execute(
             query_insert,
             {
@@ -109,10 +111,10 @@ def add_player():
             },
         )
         db.session.commit()
-        
+
         flash("Player added successfully!", "success")
         return redirect(url_for("views.players"))
-    
+
     return render_template("add_player.html")
 
 
@@ -240,15 +242,61 @@ def add_player_season_stats():
         bpm = request.form.get("BPM")
         vorp = request.form.get("VORP")
 
-        variables = [season_id, player_id, games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
-                     stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp]
+        variables = [
+            season_id,
+            player_id,
+            games,
+            per,
+            ts_percent,
+            x3p_ar,
+            f_tr,
+            orb_percent,
+            drb_percent,
+            trb_percent,
+            ast_percent,
+            stl_percent,
+            blk_percent,
+            tov_percent,
+            usg_percent,
+            ows,
+            dws,
+            ws,
+            ws_48,
+            obpm,
+            dbpm,
+            bpm,
+            vorp,
+        ]
 
         for i, value in enumerate(variables):
-            if value == '':
+            if value == "":
                 variables[i] = None
 
-        (season_id, player_id, games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
-         stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp) = variables
+        (
+            season_id,
+            player_id,
+            games,
+            per,
+            ts_percent,
+            x3p_ar,
+            f_tr,
+            orb_percent,
+            drb_percent,
+            trb_percent,
+            ast_percent,
+            stl_percent,
+            blk_percent,
+            tov_percent,
+            usg_percent,
+            ows,
+            dws,
+            ws,
+            ws_48,
+            obpm,
+            dbpm,
+            bpm,
+            vorp,
+        ) = variables
 
         is_valid, error_message = validate_player_stats(season_id, player_id)
 
@@ -293,17 +341,19 @@ def add_player_season_stats():
                 "dbpm": dbpm,
                 "bpm": bpm,
                 "vorp": vorp,
-            }
+            },
         )
         db.session.commit()
 
-        flash('New Player Season Stats added successfully', 'success')
+        flash("New Player Season Stats added successfully", "success")
         return redirect(url_for("views.player_season_stats"))
 
     return render_template("add_player_season_stats.html")
 
 
-@views.route("/delete_player_season_stats/<int:season_id>/<int:player_id>", methods=["POST"])
+@views.route(
+    "/delete_player_season_stats/<int:season_id>/<int:player_id>", methods=["POST"]
+)
 @admin_required
 def delete_player_season_stats(season_id, player_id):
     # Execute the DELETE SQL query using both Season_ID and Player_ID
@@ -318,12 +368,18 @@ def delete_player_season_stats(season_id, player_id):
     return redirect(url_for("views.player_season_stats"))
 
 
-@views.route("/edit_player_season_stats/<int:season_id>/<int:player_id>", methods=["GET", "POST"])
+@views.route(
+    "/edit_player_season_stats/<int:season_id>/<int:player_id>", methods=["GET", "POST"]
+)
 @admin_required
 def edit_player_season_stats(season_id, player_id):
     # Retrieve the player season stats details
-    query = text("SELECT * FROM Player_Season_Stats WHERE Season_ID = :season_id AND Player_ID = :player_id")
-    stats = db.session.execute(query, {"season_id": season_id, "player_id": player_id}).fetchone()
+    query = text(
+        "SELECT * FROM Player_Season_Stats WHERE Season_ID = :season_id AND Player_ID = :player_id"
+    )
+    stats = db.session.execute(
+        query, {"season_id": season_id, "player_id": player_id}
+    ).fetchone()
 
     if request.method == "POST":
         # Get updated values from the form
@@ -349,16 +405,58 @@ def edit_player_season_stats(season_id, player_id):
         bpm = request.form.get("BPM")
         vorp = request.form.get("VORP")
 
-        variables = [games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, 
-                     stl_percent, blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp]
+        variables = [
+            games,
+            per,
+            ts_percent,
+            x3p_ar,
+            f_tr,
+            orb_percent,
+            drb_percent,
+            trb_percent,
+            ast_percent,
+            stl_percent,
+            blk_percent,
+            tov_percent,
+            usg_percent,
+            ows,
+            dws,
+            ws,
+            ws_48,
+            obpm,
+            dbpm,
+            bpm,
+            vorp,
+        ]
 
         for i, value in enumerate(variables):
-            if value == '':
+            if value == "":
                 variables[i] = None
 
-        (games, per, ts_percent, x3p_ar, f_tr, orb_percent, drb_percent, trb_percent, ast_percent, stl_percent, 
-         blk_percent, tov_percent, usg_percent, ows, dws, ws, ws_48, obpm, dbpm, bpm, vorp) = variables
-        
+        (
+            games,
+            per,
+            ts_percent,
+            x3p_ar,
+            f_tr,
+            orb_percent,
+            drb_percent,
+            trb_percent,
+            ast_percent,
+            stl_percent,
+            blk_percent,
+            tov_percent,
+            usg_percent,
+            ows,
+            dws,
+            ws,
+            ws_48,
+            obpm,
+            dbpm,
+            bpm,
+            vorp,
+        ) = variables
+
         # Update the player season stats in the database
         query_update = text("""
             UPDATE Player_Season_Stats
@@ -412,12 +510,16 @@ def edit_player_season_stats(season_id, player_id):
                 "vorp": vorp,
                 "season_id": season_id,
                 "player_id": player_id,
-            }
+            },
         )
         db.session.commit()
 
-        flash('Player Season Stats updated successfully', 'success')
-        return redirect(url_for("views.player_season_stats", season_id=season_id, player_id=player_id))
+        flash("Player Season Stats updated successfully", "success")
+        return redirect(
+            url_for(
+                "views.player_season_stats", season_id=season_id, player_id=player_id
+            )
+        )
 
     return render_template("edit_player_season_stats.html", stats=stats)
 
@@ -432,7 +534,7 @@ def player_season_info():
 
     # Execute the query and fetch all rows
     player_season_info = db.session.execute(query).fetchall()
-    
+
     return render_template("player_season_info.html", information=player_season_info)
 
 
@@ -456,7 +558,9 @@ def add_player_season_info():
         if experience == "":
             experience = None
 
-        is_valid, error_message = validate_player_info(season_id, player_id, team_id, age, experience)
+        is_valid, error_message = validate_player_info(
+            season_id, player_id, team_id, age, experience
+        )
 
         if not is_valid:
             flash(error_message, "danger")
@@ -467,7 +571,7 @@ def add_player_season_info():
             INSERT INTO Player_Info_Per_Season (Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP)
             VALUES (:season_id, :player_id, :player_name, :league, :team_id, :position, :age, :experience, :mvp)
         """)
-        
+
         db.session.execute(
             query_insert,
             {
@@ -479,8 +583,8 @@ def add_player_season_info():
                 "position": position,
                 "age": age,
                 "experience": experience,
-                "mvp": mvp
-            }
+                "mvp": mvp,
+            },
         )
         db.session.commit()
 
@@ -489,7 +593,9 @@ def add_player_season_info():
     return render_template("add_player_season_info.html")
 
 
-@views.route("/delete_player_season_info/<int:season_id>/<int:player_id>", methods=["POST"])
+@views.route(
+    "/delete_player_season_info/<int:season_id>/<int:player_id>", methods=["POST"]
+)
 @admin_required
 def delete_player_season_info(season_id, player_id):
     # Execute the DELETE SQL query directly
@@ -504,7 +610,9 @@ def delete_player_season_info(season_id, player_id):
     return redirect(url_for("views.player_season_info"))
 
 
-@views.route("/edit_player_season_info/<int:season_id>/<int:player_id>", methods=["GET", "POST"])
+@views.route(
+    "/edit_player_season_info/<int:season_id>/<int:player_id>", methods=["GET", "POST"]
+)
 @admin_required
 def edit_player_season_info(season_id, player_id):
     # Retrieve the player season info details
@@ -512,7 +620,9 @@ def edit_player_season_info(season_id, player_id):
         SELECT * FROM Player_Info_Per_Season 
         WHERE Season_ID = :season_id AND Player_ID = :player_id
     """)
-    info = db.session.execute(query, {"season_id": season_id, "player_id": player_id}).fetchone()
+    info = db.session.execute(
+        query, {"season_id": season_id, "player_id": player_id}
+    ).fetchone()
 
     if request.method == "POST":
         # Get updated values from the form
@@ -523,13 +633,15 @@ def edit_player_season_info(season_id, player_id):
         age = request.form.get("Age")
         experience = request.form.get("Experience")
         mvp = request.form.get("MVP") == "True"  # Convert to boolean
-        
+
         if age == "":
             age = None
         if experience == "":
             experience = None
-        
-        is_valid, error_message = validate_player_info(season_id, player_id, team_id, age, experience)
+
+        is_valid, error_message = validate_player_info(
+            season_id, player_id, team_id, age, experience
+        )
 
         if not is_valid:
             flash(error_message, "danger")
@@ -547,7 +659,7 @@ def edit_player_season_info(season_id, player_id):
                 MVP = :mvp
             WHERE Season_ID = :season_id AND Player_ID = :player_id
         """)
-        
+
         db.session.execute(
             query_update,
             {
@@ -560,7 +672,7 @@ def edit_player_season_info(season_id, player_id):
                 "mvp": mvp,
                 "season_id": season_id,
                 "player_id": player_id,
-            }
+            },
         )
         db.session.commit()
 
@@ -572,6 +684,7 @@ def edit_player_season_info(season_id, player_id):
 # -----------------------
 # Teams views
 # -----------------------
+
 
 @views.route("/teams")
 def teams():
@@ -620,9 +733,11 @@ def team_season_info():
             results = []
     return render_template("team_season_info.html", teams=all_teams, results=results)
 
+
 # -----------------------
 # Seasons & Game Shots views
 # -----------------------
+
 
 @views.route("/seasons")
 def seasons():
@@ -634,6 +749,7 @@ def seasons():
     # Execute the query and fetch all rows
     seasons = db.session.execute(query).fetchall()
     return render_template("seasons.html", seasons=seasons)
+
 
 @views.route("/delete_season/<int:season_id>", methods=["POST"])
 @admin_required

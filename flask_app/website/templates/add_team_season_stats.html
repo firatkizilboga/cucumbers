@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Add Team Season Stats{% endblock %}
+
+{% block content %}
+<h1>Add Team Season Stats</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+  {% for msg in get_flashed_messages(with_categories=true) %}
+    <li>{{ msg[1] }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+<form method="POST">
+  <div class="form-group">
+    <label for="team_id">Team</label>
+    <select class="form-control" id="team_id" name="team_id" required>
+      <option value="">-- Select Team --</option>
+      {% for t in teams %}
+        <option value="{{ t.team_id }}">{{ t.team_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="season_id">Season</label>
+    <select class="form-control" id="season_id" name="season_id" required>
+      <option value="">-- Select Season --</option>
+      {% for s in seasons %}
+        <option value="{{ s.season_id }}">{{ s.year }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Example numeric fields (floats) -->
+  <div class="row">
+    <div class="col-md-4">
+      <label for="mov">MOV</label>
+      <input type="number" step="0.1" class="form-control" id="mov" name="mov" />
+    </div>
+    <div class="col-md-4">
+      <label for="sos">SOS</label>
+      <input type="number" step="0.1" class="form-control" id="sos" name="sos" />
+    </div>
+    <div class="col-md-4">
+      <label for="srs">SRS</label>
+      <input type="number" step="0.1" class="form-control" id="srs" name="srs" />
+    </div>
+  </div>
+  
+  <div class="row mt-2">
+    <div class="col-md-4">
+      <label for="o_rtg">O_Rtg</label>
+      <input type="number" step="0.1" class="form-control" id="o_rtg" name="o_rtg" />
+    </div>
+    <div class="col-md-4">
+      <label for="d_rtg">D_Rtg</label>
+      <input type="number" step="0.1" class="form-control" id="d_rtg" name="d_rtg" />
+    </div>
+    <div class="col-md-4">
+      <label for="n_rtg">N_Rtg</label>
+      <input type="number" step="0.1" class="form-control" id="n_rtg" name="n_rtg" />
+    </div>
+  </div>
+  
+  <div class="row mt-2">
+    <div class="col-md-4">
+      <label for="pace">PACE</label>
+      <input type="number" step="0.1" class="form-control" id="pace" name="pace" />
+    </div>
+    <div class="col-md-4">
+      <label for="f_tr">F_tr</label>
+      <input type="number" step="0.1" class="form-control" id="f_tr" name="f_tr" />
+    </div>
+    <div class="col-md-4">
+      <label for="x3p_ar">3PAr</label>
+      <input type="number" step="0.1" class="form-control" id="x3p_ar" name="x3p_ar" />
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col-md-4">
+      <label for="ts_percent">TS%</label>
+      <input type="number" step="0.1" class="form-control" id="ts_percent" name="ts_percent" />
+    </div>
+    <div class="col-md-4">
+      <label for="e_fg_percent">eFG%</label>
+      <input type="number" step="0.1" class="form-control" id="e_fg_percent" name="e_fg_percent" />
+    </div>
+    <div class="col-md-4">
+      <label for="tov_percent">TOV%</label>
+      <input type="number" step="0.1" class="form-control" id="tov_percent" name="tov_percent" />
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col-md-4">
+      <label for="orb_percent">ORB%</label>
+      <input type="number" step="0.1" class="form-control" id="orb_percent" name="orb_percent" />
+    </div>
+    <div class="col-md-4">
+      <label for="ft_fga">FT/FGA</label>
+      <input type="number" step="0.1" class="form-control" id="ft_fga" name="ft_fga" />
+    </div>
+    <div class="col-md-4">
+      <label for="opp_e_fg_percent">Opp eFG%</label>
+      <input type="number" step="0.1" class="form-control" id="opp_e_fg_percent" name="opp_e_fg_percent" />
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col-md-4">
+      <label for="opp_tov_percent">Opp TOV%</label>
+      <input type="number" step="0.1" class="form-control" id="opp_tov_percent" name="opp_tov_percent" />
+    </div>
+    <div class="col-md-4">
+      <label for="opp_drb_percent">Opp DRB%</label>
+      <input type="number" step="0.1" class="form-control" id="opp_drb_percent" name="opp_drb_percent" />
+    </div>
+    <div class="col-md-4">
+      <label for="opp_ft_fga">Opp FT/FGA</label>
+      <input type="number" step="0.1" class="form-control" id="opp_ft_fga" name="opp_ft_fga" />
+    </div>
+  </div>
+
+  <!-- String or text columns -->
+  <div class="row mt-2">
+    <div class="col-md-6">
+      <label for="arena">Arena</label>
+      <input type="text" class="form-control" id="arena" name="arena" />
+    </div>
+    <div class="col-md-3">
+      <label for="attend">Attend</label>
+      <input type="number" class="form-control" id="attend" name="attend" />
+    </div>
+    <div class="col-md-3">
+      <label for="attend_g">Attend/G</label>
+      <input type="number" class="form-control" id="attend_g" name="attend_g" />
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-success mt-3">Add Stats</button>
+</form>
+{% endblock %}

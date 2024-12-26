@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %} Edit Team Season Info {% endblock %}
+
+{% block content %}
+<h1>Edit Team Season Info</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+  {% for msg in get_flashed_messages(with_categories=true) %}
+    <li>{{ msg[1] }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+<form method="POST">
+  <div class="form-group">
+    <label for="league">League</label>
+    <input 
+      type="text" 
+      id="league" 
+      name="league" 
+      class="form-control"
+      value="{{ record.league }}"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="abbreviation">Abbreviation</label>
+    <input 
+      type="text" 
+      id="abbreviation" 
+      name="abbreviation" 
+      class="form-control"
+      value="{{ record.abbreviation }}"
+    >
+  </div>
+  
+  <div class="form-group">
+    <label for="wins">Wins</label>
+    <input 
+      type="number" 
+      id="wins" 
+      name="wins" 
+      class="form-control"
+      value="{{ record.wins }}"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="losses">Losses</label>
+    <input 
+      type="number" 
+      id="losses" 
+      name="losses" 
+      class="form-control"
+      value="{{ record.losses }}"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="playoff_wins">Playoff Wins</label>
+    <input 
+      type="number" 
+      id="playoff_wins" 
+      name="playoff_wins" 
+      class="form-control"
+      value="{{ record.playoff_wins }}"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="playoff_losses">Playoff Losses</label>
+    <input 
+      type="number" 
+      id="playoff_losses" 
+      name="playoff_losses" 
+      class="form-control"
+      value="{{ record.playoff_losses }}"
+    >
+  </div>
+
+  <div class="form-group">
+    <label for="age">Average Age</label>
+    <input 
+      type="text" 
+      id="age" 
+      name="age" 
+      class="form-control"
+      value="{{ record.age }}"
+    >
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+{% endblock %}

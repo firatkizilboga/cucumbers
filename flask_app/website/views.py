@@ -811,6 +811,7 @@ def team_season_info():
             query = text("""
                 SELECT
                     team_id,
+                    Seasons.season_id as season_id,
                     Seasons.year as year,
                     league,
                     abbreviation,
@@ -827,6 +828,461 @@ def team_season_info():
         else:
             results = []
     return render_template("team_season_info.html", teams=all_teams, results=results)
+
+@views.route("/add_team_season_info", methods=["GET", "POST"])
+def add_team_season_info():
+    """
+    View to add a new season record to the Team_Season_Info table.
+    """
+
+    # Optionally, fetch a list of teams and/or seasons to populate dropdowns in the form:
+    teams = db.session.execute(text("SELECT team_id, team_name FROM Teams")).fetchall()
+    seasons = db.session.execute(text("SELECT season_id, year FROM Seasons")).fetchall()
+
+    if request.method == "POST":
+        # Retrieve form fields
+        team_id = request.form.get("team_id")         # e.g. from a <select> or hidden input
+        season_id = request.form.get("season_id")     # e.g. from a <select>
+        league = request.form.get("league", "")
+        abbreviation = request.form.get("abbreviation", "")
+        wins = request.form.get("wins", 0)
+        losses = request.form.get("losses", 0)
+        playoff_wins = request.form.get("playoff_wins", 0)
+        playoff_losses = request.form.get("playoff_losses", 0)
+        age = request.form.get("age", None)  # or some default
+
+        # Perform the INSERT
+        insert_query = text("""
+            INSERT INTO Team_Season_Info (
+                team_id, 
+                season_id, 
+                league, 
+                abbreviation, 
+                w, 
+                l, 
+                pw, 
+                pl, 
+                age
+            ) VALUES (
+                :team_id, 
+                :season_id, 
+                :league, 
+                :abbreviation, 
+                :wins, 
+                :losses, 
+                :playoff_wins, 
+                :playoff_losses, 
+                :age
+            )
+        """)
+
+        try:
+            db.session.execute(insert_query, {
+                "team_id": team_id,
+                "season_id": season_id,
+                "league": league,
+                "abbreviation": abbreviation,
+                "wins": wins,
+                "losses": losses,
+                "playoff_wins": playoff_wins,
+                "playoff_losses": playoff_losses,
+                "age": age
+            })
+            db.session.commit()
+
+            flash("New Team Season Info added successfully!", "success")
+            return redirect(url_for("views.team_season_info"))
+
+        except Exception as e:
+            # Optional: log or print the error
+            flash(f"Error while adding Team Season Info: {str(e)}", "error")
+            db.session.rollback()
+
+    # If GET or if there was an error, render the form again
+    return render_template(
+        "add_team_season_info.html",
+        teams=teams,
+        seasons=seasons
+    )
+
+
+
+@views.route("/delete_team_season_info/<int:team_id>/<int:season_id>", methods=["POST"])
+@admin_required
+def delete_team_season_info(team_id, season_id):
+    # Execute the DELETE SQL query directly
+    query = text("DELETE FROM Team_Season_Info WHERE team_id = :team_id AND season_id = :season_id")
+    db.session.execute(query, {"team_id": team_id, "season_id": season_id})
+
+    db.session.commit()
+
+    return redirect(url_for("views.team_season_info"))
+
+
+@views.route("/edit_team_season_info/<int:team_id>/<int:season_id>", methods=["GET", "POST"])
+def edit_team_season_info(team_id, season_id):
+    """
+    View to edit a specific team's season record in the Team_Season_Info table.
+    """
+
+    # Fetch the existing record (if any)
+    select_query = text("""
+        SELECT TSI.team_id,
+               TSI.season_id,
+               league,
+               abbreviation,
+               w as wins,
+               l as losses,
+               pw as playoff_wins,
+               pl as playoff_losses,
+               age
+        FROM Team_Season_Info AS TSI
+        WHERE TSI.team_id = :team_id
+          AND TSI.season_id = :season_id
+    """)
+    record = db.session.execute(
+        select_query, 
+        {"team_id": team_id, "season_id": season_id}
+    ).fetchone()
+
+    if not record:
+        flash("No season info found for the specified team and season.", "error")
+        return redirect(url_for("views.team_season_info"))
+
+    if request.method == "POST":
+        # Get updated field values from the form
+        league = request.form.get("league", record.league)
+        abbreviation = request.form.get("abbreviation", record.abbreviation)
+        wins = request.form.get("wins", record.wins)
+        losses = request.form.get("losses", record.losses)
+        playoff_wins = request.form.get("playoff_wins", record.playoff_wins)
+        playoff_losses = request.form.get("playoff_losses", record.playoff_losses)
+        age = request.form.get("age", record.age)
+
+        # Perform the update
+        update_query = text("""
+            UPDATE Team_Season_Info
+            SET
+                league = :league,
+                abbreviation = :abbreviation,
+                w = :wins,
+                l = :losses,
+                pw = :playoff_wins,
+                pl = :playoff_losses,
+                age = :age
+            WHERE team_id = :team_id
+              AND season_id = :season_id
+        """)
+
+        db.session.execute(update_query, {
+            "league": league,
+            "abbreviation": abbreviation,
+            "wins": wins,
+            "losses": losses,
+            "playoff_wins": playoff_wins,
+            "playoff_losses": playoff_losses,
+            "age": age,
+            "team_id": team_id,
+            "season_id": season_id
+        })
+
+        db.session.commit()
+        flash("Team season info updated successfully!", "success")
+
+        # Redirect or render the same page, depending on your flow
+        # Here we’ll redirect back to the main team_season_info page
+        return redirect(url_for("views.team_season_info"))
+    
+    # If GET, render the edit form with existing values
+    return render_template(
+        "edit_team_season_info.html",
+        record=record
+    )
+
+
+@views.route("/team_season_stats", methods=["GET", "POST"])
+def team_season_stats():
+    # Fetch all teams for the dropdown.
+    all_teams = db.session.execute(text("SELECT * FROM Teams")).fetchall()
+
+    selected_team = None
+    results = []
+
+    if request.method == "POST":
+        selected_team = request.form.get("team")
+        if selected_team:
+            # Query the Team_Season_Stats table (join on Seasons to display year, if you wish).
+            query = text("""
+                SELECT
+                  tss.team_id,
+                  tss.season_id,
+                  s.year as year,
+                  tss.mov,
+                  tss.sos,
+                  tss.srs,
+                  tss.o_rtg,
+                  tss.d_rtg,
+                  tss.n_rtg,
+                  tss.pace,
+                  tss.f_tr,
+                  tss.x3p_ar,
+                  tss.ts_percent,
+                  tss.e_fg_percent,
+                  tss.tov_percent,
+                  tss.orb_percent,
+                  tss.ft_fga,
+                  tss.opp_e_fg_percent,
+                  tss.opp_tov_percent,
+                  tss.opp_drb_percent,
+                  tss.opp_ft_fga,
+                  tss.arena,
+                  tss.attend,
+                  tss.attend_g
+                FROM Team_Season_Stats AS tss
+                JOIN Seasons AS s ON tss.season_id = s.season_id
+                WHERE tss.team_id = :team_id
+            """)
+            results = db.session.execute(query, {"team_id": selected_team}).fetchall()
+
+    return render_template(
+        "team_season_stats.html",
+        teams=all_teams,
+        results=results
+    )
+
+
+@views.route("/add_team_season_stats", methods=["GET", "POST"])
+def add_team_season_stats():
+    teams = db.session.execute(text("SELECT team_id, team_name FROM Teams")).fetchall()
+    seasons = db.session.execute(text("SELECT season_id, year FROM Seasons")).fetchall()
+
+    if request.method == "POST":
+        # Get form fields
+        team_id = request.form.get("team_id")
+        season_id = request.form.get("season_id")
+
+        # We'll parse everything else as float or strings as needed
+        mov = request.form.get("mov", 0.0)
+        sos = request.form.get("sos", 0.0)
+        srs = request.form.get("srs", 0.0)
+        o_rtg = request.form.get("o_rtg", 0.0)
+        d_rtg = request.form.get("d_rtg", 0.0)
+        n_rtg = request.form.get("n_rtg", 0.0)
+        pace = request.form.get("pace", 0.0)
+        f_tr = request.form.get("f_tr", 0.0)
+        x3p_ar = request.form.get("x3p_ar", 0.0)
+        ts_percent = request.form.get("ts_percent", 0.0)
+        e_fg_percent = request.form.get("e_fg_percent", 0.0)
+        tov_percent = request.form.get("tov_percent", 0.0)
+        orb_percent = request.form.get("orb_percent", 0.0)
+        ft_fga = request.form.get("ft_fga", 0.0)
+        opp_e_fg_percent = request.form.get("opp_e_fg_percent", 0.0)
+        opp_tov_percent = request.form.get("opp_tov_percent", 0.0)
+        opp_drb_percent = request.form.get("opp_drb_percent", 0.0)
+        opp_ft_fga = request.form.get("opp_ft_fga", 0.0)
+        arena = request.form.get("arena", "")
+        attend = request.form.get("attend", 0)
+        attend_g = request.form.get("attend_g", 0)
+
+        insert_query = text("""
+            INSERT INTO Team_Season_Stats (
+                team_id, season_id, 
+                mov, sos, srs, o_rtg, d_rtg, n_rtg, pace, f_tr, x3p_ar, 
+                ts_percent, e_fg_percent, tov_percent, orb_percent, ft_fga, 
+                opp_e_fg_percent, opp_tov_percent, opp_drb_percent, opp_ft_fga,
+                arena, attend, attend_g
+            )
+            VALUES (
+                :team_id, :season_id,
+                :mov, :sos, :srs, :o_rtg, :d_rtg, :n_rtg, :pace, :f_tr, :x3p_ar,
+                :ts_percent, :e_fg_percent, :tov_percent, :orb_percent, :ft_fga,
+                :opp_e_fg_percent, :opp_tov_percent, :opp_drb_percent, :opp_ft_fga,
+                :arena, :attend, :attend_g
+            )
+        """)
+
+        try:
+            db.session.execute(insert_query, {
+                "team_id": team_id,
+                "season_id": season_id,
+                "mov": mov,
+                "sos": sos,
+                "srs": srs,
+                "o_rtg": o_rtg,
+                "d_rtg": d_rtg,
+                "n_rtg": n_rtg,
+                "pace": pace,
+                "f_tr": f_tr,
+                "x3p_ar": x3p_ar,
+                "ts_percent": ts_percent,
+                "e_fg_percent": e_fg_percent,
+                "tov_percent": tov_percent,
+                "orb_percent": orb_percent,
+                "ft_fga": ft_fga,
+                "opp_e_fg_percent": opp_e_fg_percent,
+                "opp_tov_percent": opp_tov_percent,
+                "opp_drb_percent": opp_drb_percent,
+                "opp_ft_fga": opp_ft_fga,
+                "arena": arena,
+                "attend": attend,
+                "attend_g": attend_g
+            })
+            db.session.commit()
+
+            flash("Team season stats added successfully!", "success")
+            return redirect(url_for("views.team_season_stats"))
+
+        except Exception as e:
+            flash(f"Error adding team season stats: {str(e)}", "error")
+            db.session.rollback()
+
+    return render_template("add_team_season_stats.html", teams=teams, seasons=seasons)
+
+
+@views.route("/edit_team_season_stats/<int:team_id>/<int:season_id>", methods=["GET", "POST"])
+def edit_team_season_stats(team_id, season_id):
+    # Fetch the existing record
+    select_query = text("""
+        SELECT
+            team_id,
+            season_id,
+            mov,
+            sos,
+            srs,
+            o_rtg,
+            d_rtg,
+            n_rtg,
+            pace,
+            f_tr,
+            x3p_ar,
+            ts_percent,
+            e_fg_percent,
+            tov_percent,
+            orb_percent,
+            ft_fga,
+            opp_e_fg_percent,
+            opp_tov_percent,
+            opp_drb_percent,
+            opp_ft_fga,
+            arena,
+            attend,
+            attend_g
+        FROM Team_Season_Stats
+        WHERE team_id = :team_id
+          AND season_id = :season_id
+    """)
+    record = db.session.execute(select_query, {
+        "team_id": team_id,
+        "season_id": season_id
+    }).fetchone()
+
+    if not record:
+        flash("No team season stats found for the specified team and season.", "error")
+        return redirect(url_for("views.team_season_stats"))
+
+    if request.method == "POST":
+        # Gather updated fields from the form (default to existing record values if not provided)
+        mov = request.form.get("mov", record.mov)
+        sos = request.form.get("sos", record.sos)
+        srs = request.form.get("srs", record.srs)
+        o_rtg = request.form.get("o_rtg", record.o_rtg)
+        d_rtg = request.form.get("d_rtg", record.d_rtg)
+        n_rtg = request.form.get("n_rtg", record.n_rtg)
+        pace = request.form.get("pace", record.pace)
+        f_tr = request.form.get("f_tr", record.f_tr)
+        x3p_ar = request.form.get("x3p_ar", record.x3p_ar)
+        ts_percent = request.form.get("ts_percent", record.ts_percent)
+        e_fg_percent = request.form.get("e_fg_percent", record.e_fg_percent)
+        tov_percent = request.form.get("tov_percent", record.tov_percent)
+        orb_percent = request.form.get("orb_percent", record.orb_percent)
+        ft_fga = request.form.get("ft_fga", record.ft_fga)
+        opp_e_fg_percent = request.form.get("opp_e_fg_percent", record.opp_e_fg_percent)
+        opp_tov_percent = request.form.get("opp_tov_percent", record.opp_tov_percent)
+        opp_drb_percent = request.form.get("opp_drb_percent", record.opp_drb_percent)
+        opp_ft_fga = request.form.get("opp_ft_fga", record.opp_ft_fga)
+        arena = request.form.get("arena", record.arena)
+        attend = request.form.get("attend", record.attend)
+        attend_g = request.form.get("attend_g", record.attend_g)
+
+        update_query = text("""
+            UPDATE Team_Season_Stats
+            SET
+                mov = :mov,
+                sos = :sos,
+                srs = :srs,
+                o_rtg = :o_rtg,
+                d_rtg = :d_rtg,
+                n_rtg = :n_rtg,
+                pace = :pace,
+                f_tr = :f_tr,
+                x3p_ar = :x3p_ar,
+                ts_percent = :ts_percent,
+                e_fg_percent = :e_fg_percent,
+                tov_percent = :tov_percent,
+                orb_percent = :orb_percent,
+                ft_fga = :ft_fga,
+                opp_e_fg_percent = :opp_e_fg_percent,
+                opp_tov_percent = :opp_tov_percent,
+                opp_drb_percent = :opp_drb_percent,
+                opp_ft_fga = :opp_ft_fga,
+                arena = :arena,
+                attend = :attend,
+                attend_g = :attend_g
+            WHERE team_id = :team_id
+              AND season_id = :season_id
+        """)
+        try:
+            db.session.execute(update_query, {
+                "mov": mov,
+                "sos": sos,
+                "srs": srs,
+                "o_rtg": o_rtg,
+                "d_rtg": d_rtg,
+                "n_rtg": n_rtg,
+                "pace": pace,
+                "f_tr": f_tr,
+                "x3p_ar": x3p_ar,
+                "ts_percent": ts_percent,
+                "e_fg_percent": e_fg_percent,
+                "tov_percent": tov_percent,
+                "orb_percent": orb_percent,
+                "ft_fga": ft_fga,
+                "opp_e_fg_percent": opp_e_fg_percent,
+                "opp_tov_percent": opp_tov_percent,
+                "opp_drb_percent": opp_drb_percent,
+                "opp_ft_fga": opp_ft_fga,
+                "arena": arena,
+                "attend": attend,
+                "attend_g": attend_g,
+                "team_id": team_id,
+                "season_id": season_id
+            })
+            db.session.commit()
+            flash("Team season stats updated successfully!", "success")
+            return redirect(url_for("views.team_season_stats"))
+        except Exception as e:
+            flash(f"Error updating team season stats: {str(e)}", "error")
+            db.session.rollback()
+
+    return render_template("edit_team_season_stats.html", record=record)
+
+
+@views.route("/delete_team_season_stats/<int:team_id>/<int:season_id>", methods=["POST"])
+def delete_team_season_stats(team_id, season_id):
+    delete_query = text("""
+        DELETE FROM Team_Season_Stats
+        WHERE team_id = :team_id
+          AND season_id = :season_id
+    """)
+    try:
+        db.session.execute(delete_query, {"team_id": team_id, "season_id": season_id})
+        db.session.commit()
+        flash("Team season stats deleted successfully!", "success")
+    except Exception as e:
+        flash(f"Error deleting team season stats: {str(e)}", "error")
+        db.session.rollback()
+
+    return redirect(url_for("views.team_season_stats"))
 
 
 # -----------------------

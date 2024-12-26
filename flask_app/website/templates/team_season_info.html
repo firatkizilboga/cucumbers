@@ -3,6 +3,9 @@
 
 {% block content %}
     <h1>Team Season Info</h1>
+    {% if current_user.is_admin %}
+        <a href="{{ url_for('views.add_team_season_info') }}" class="btn btn-primary mb-3">Add Team Season Info</a>
+    {% endif %}
     <form method="POST" action="{{ url_for('views.team_season_info') }}">
         <label for="team_select">Choose a team: </label>
         <select id="team_select" name="team" class="form-select">
@@ -39,6 +42,14 @@
                     <td>{{ team.playoff_wins }}</td>
                     <td>{{ team.playoff_losses }}</td>
                     <td>{{ team.age }}</td>
+                    <td>
+                        {% if current_user.is_admin %}
+                        <a href="{{ url_for('views.edit_team_season_info', team_id=team.team_id, season_id=team.season_id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <form action="{{ url_for('views.delete_team_season_info', team_id=team.team_id, season_id=team.season_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

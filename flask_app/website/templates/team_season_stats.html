@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Team Season Stats{% endblock %}
+
+{% block content %}
+<h1>Team Season Stats</h1>
+
+{% if current_user.is_admin %}
+<a href="{{ url_for('views.add_team_season_stats') }}" class="btn btn-primary mb-3">
+  Add Team Season Stats
+</a>
+{% endif %}
+
+<form method="POST" action="{{ url_for('views.team_season_stats') }}">
+    <label for="team_select">Choose a team: </label>
+    <select id="team_select" name="team" class="form-select">
+        {% for team in teams %}
+            {% if results and results[0] and team.team_id == results[0].team_id %}
+                <option value="{{ team.team_id }}" selected>{{ team.team_name }}</option>
+            {% else %}
+                <option value="{{ team.team_id }}">{{ team.team_name }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <button type="submit">Fetch</button>
+</form>
+
+{% if results %}
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Year</th>
+            <th>MOV</th>
+            <th>SOS</th>
+            <th>SRS</th>
+            <th>O_Rtg</th>
+            <th>D_Rtg</th>
+            <th>N_Rtg</th>
+            <th>PACE</th>
+            <th>F_tr</th>
+            <th>3PAr</th>
+            <th>TS%</th>
+            <th>eFG%</th>
+            <th>TOV%</th>
+            <th>ORB%</th>
+            <th>FT/FGA</th>
+            <th>Opp eFG%</th>
+            <th>Opp TOV%</th>
+            <th>Opp DRB%</th>
+            <th>Opp FT/FGA</th>
+            <th>Arena</th>
+            <th>Attend</th>
+            <th>Attend/G</th>
+            {% if current_user.is_admin %}
+            <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in results %}
+        <tr>
+            <td>{{ row.year }}</td>
+            <td>{{ row.mov }}</td>
+            <td>{{ row.sos }}</td>
+            <td>{{ row.srs }}</td>
+            <td>{{ row.o_rtg }}</td>
+            <td>{{ row.d_rtg }}</td>
+            <td>{{ row.n_rtg }}</td>
+            <td>{{ row.pace }}</td>
+            <td>{{ row.f_tr }}</td>
+            <td>{{ row.x3p_ar }}</td>
+            <td>{{ row.ts_percent }}</td>
+            <td>{{ row.e_fg_percent }}</td>
+            <td>{{ row.tov_percent }}</td>
+            <td>{{ row.orb_percent }}</td>
+            <td>{{ row.ft_fga }}</td>
+            <td>{{ row.opp_e_fg_percent }}</td>
+            <td>{{ row.opp_tov_percent }}</td>
+            <td>{{ row.opp_drb_percent }}</td>
+            <td>{{ row.opp_ft_fga }}</td>
+            <td>{{ row.arena }}</td>
+            <td>{{ row.attend }}</td>
+            <td>{{ row.attend_g }}</td>
+            {% if current_user.is_admin %}
+            <td>
+                <a href="{{ url_for('views.edit_team_season_stats', team_id=row.team_id, season_id=row.season_id) }}"
+                   class="btn btn-sm btn-warning">Edit</a>
+                <form action="{{ url_for('views.delete_team_season_stats', team_id=row.team_id, season_id=row.season_id) }}"
+                      method="POST"
+                      style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

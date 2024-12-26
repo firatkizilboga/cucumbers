@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Add Team Season Info{% endblock %}
+
+{% block content %}
+<h1>Add Team Season Info</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+  {% for msg in get_flashed_messages(with_categories=true) %}
+    <li>{{ msg[1] }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+<form method="POST">
+  <!-- Team Selection -->
+  <div class="form-group">
+    <label for="team_id">Team</label>
+    <select class="form-control" id="team_id" name="team_id" required>
+      <option value="">-- Select Team --</option>
+      {% for t in teams %}
+        <option value="{{ t.team_id }}">{{ t.team_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Season Selection -->
+  <div class="form-group">
+    <label for="season_id">Season</label>
+    <select class="form-control" id="season_id" name="season_id" required>
+      <option value="">-- Select Season --</option>
+      {% for s in seasons %}
+        <option value="{{ s.season_id }}">{{ s.year }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- League -->
+  <div class="form-group">
+    <label for="league">League</label>
+    <input type="text" class="form-control" id="league" name="league" placeholder="e.g., NBA" />
+  </div>
+
+  <!-- Abbreviation -->
+  <div class="form-group">
+    <label for="abbreviation">Abbreviation</label>
+    <input type="text" class="form-control" id="abbreviation" name="abbreviation" placeholder="e.g., BOS" />
+  </div>
+
+  <!-- Wins -->
+  <div class="form-group">
+    <label for="wins">Wins</label>
+    <input type="number" class="form-control" id="wins" name="wins" />
+  </div>
+
+  <!-- Losses -->
+  <div class="form-group">
+    <label for="losses">Losses</label>
+    <input type="number" class="form-control" id="losses" name="losses" />
+  </div>
+
+  <!-- Playoff Wins -->
+  <div class="form-group">
+    <label for="playoff_wins">Playoff Wins</label>
+    <input type="number" class="form-control" id="playoff_wins" name="playoff_wins" />
+  </div>
+
+  <!-- Playoff Losses -->
+  <div class="form-group">
+    <label for="playoff_losses">Playoff Losses</label>
+    <input type="number" class="form-control" id="playoff_losses" name="playoff_losses" />
+  </div>
+
+  <!-- Average Age -->
+  <div class="form-group">
+    <label for="age">Average Age</label>
+    <input type="text" class="form-control" id="age" name="age" />
+  </div>
+
+  <button type="submit" class="btn btn-success">Add Team Season Info</button>
+</form>
+{% endblock %}

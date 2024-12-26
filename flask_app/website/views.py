@@ -9,7 +9,7 @@ views = Blueprint("views", __name__)
 db = SQLAlchemy()
 
 from sqlalchemy import text  # Import text for raw SQL queries
-from .utils import validate_player_data, validate_player_stats, validate_player_info
+from .utils import validate_player_data, validate_player_stats, validate_player_info, validate_team_data
 from .auth import admin_required
 
 from flask_login import login_user, logout_user, login_required, current_user
@@ -696,6 +696,101 @@ def teams():
 
     return render_template("teams.html", teams=teams)
 
+@views.route("/add_team", methods=["GET", "POST"])
+@admin_required
+def add_team():
+    if request.method == "POST":
+        # Get the form values for the new player
+        team_name = request.form.get("Team")
+        abbreviations = request.form.get("Abbreviations")
+
+
+        is_valid, error_message = validate_team_data(
+            team_name, abbreviations
+        )
+
+        if not is_valid:
+            flash(error_message, "error")
+            return redirect(url_for("views.add_team"))
+
+        query_max_id = text("SELECT MAX(Player_ID) FROM Players")
+        max_player_id = db.session.execute(query_max_id).scalar()
+        new_player_id = max_player_id + 1 if max_player_id else 1
+
+        query_insert = text("""
+                INSERT INTO Teams (team_name, team_abbreviation)
+                VALUES (:team_name, :abbreviations)
+            """)
+
+        db.session.execute(
+            query_insert,
+            {
+                "team_name": team_name,
+                "abbreviations": abbreviations
+            },
+        )
+        db.session.commit()
+
+        flash("Team added successfully!", "success")
+        return redirect(url_for("views.teams"))
+
+    return render_template("add_team.html")
+
+
+@views.route("/delete_team/<int:team_id>", methods=["POST"])
+@admin_required
+def delete_team(team_id):
+    # Execute the DELETE SQL query directly
+    query = text("DELETE FROM Teams WHERE team_id = :team_id")
+    db.session.execute(query, {"team_id": team_id})
+
+    db.session.commit()
+
+    return redirect(url_for("views.teams"))
+
+
+@views.route("/edit_team/<int:team_id>", methods=["GET", "POST"])
+@admin_required
+def edit_team(team_id):
+    # Retrieve the player's details
+    query = text("SELECT * FROM Teams WHERE team_id = :team_id")
+    team = db.session.execute(query, {"team_id": team_id}).fetchone()
+
+    if request.method == "POST":
+        # Get updated values from the form
+        team_name = request.form.get("Team")
+        abbreviations = request.form.get("Abbreviations")
+
+
+        is_valid, error_message = validate_team_data(
+            team_name, abbreviations
+        )
+
+        if not is_valid:
+            flash(error_message, "error")
+            return redirect(url_for("views.edit_team", team_id=team_id))
+
+        # Update the player's details in the database
+        query_update = text("""
+            UPDATE Teams
+            SET team_name = :team_name,
+                team_abbreviation = :abbreviations
+            WHERE team_id = :team_id
+        """)
+
+        db.session.execute(
+            query_update,
+            {
+                "team_id": team_id,
+                "team_name": team_name,
+                "abbreviations": abbreviations,
+            },
+        )
+        db.session.commit()
+
+        return redirect(url_for("views.teams"))
+
+    return render_template("edit_team.html", team=team)
 
 @views.route("/team_season_info", methods=["GET", "POST"])
 def team_season_info():

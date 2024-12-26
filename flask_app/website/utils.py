@@ -25,6 +25,14 @@ def validate_player_data(player_name, birth_year, num_seasons, first_seas, last_
   
   return True, None
 
+def validate_team_data(team_name, abbreviations):
+  if not team_name or team_name.strip() == "":
+    return False, 'Team Name cannot be empty'
+  
+  if not abbreviations or abbreviations.strip() == "":
+    return False, 'Abbreviations cannot be empty'
+
+  return True, None
 
 def validate_player_stats(season_id, player_id):
   season_exists_query = text("SELECT COUNT(*) FROM Seasons WHERE season_id = :season_id")

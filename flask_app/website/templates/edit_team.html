@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %} Edit Team {% endblock %}
+
+{% block content %}
+<h1>Edit Team</h1>
+
+{% if get_flashed_messages() %}
+  <ul>
+    <li>{{ get_flashed_messages()[-1] }}</li>
+  </ul>
+{% endif %}
+
+
+<form method="POST">
+    <div class="form-group">
+        <label for="Team">Team Name</label>
+        <input type="text" class="form-control" id="Team" name="Team" value="{{ team.team_name }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="Abbreviations">Abbreviations</label>
+        <input type="text" class="form-control" id="Abbreviations" name="Abbreviations" value="{{ team.team_abbreviation }}">
+    </div>
+   
+    <button type="submit" class="btn btn-primary">Update Team</button>
+</form>
+{% endblock %}

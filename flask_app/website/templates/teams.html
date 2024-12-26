@@ -3,6 +3,9 @@
 
 {% block content %}
     <h1>Teams</h1>
+    {% if current_user.is_admin %}
+        <a href="{{ url_for('views.add_team') }}" class="btn btn-primary mb-3">Add Team</a>
+    {% endif %}
     <table class="table table-striped">
         <thead>
             <tr>
@@ -17,6 +20,14 @@
                     <td>{{team.team_id}}</td>
                     <td>{{team.team_name}}</td>
                     <td>{{team.team_abbreviation}}</td>
+                    <td>
+                        {% if current_user.is_admin %}
+                        <a href="{{ url_for('views.edit_team', team_id=team.team_id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <form action="{{ url_for('views.delete_team', team_id=team.team_id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}NBA Teams Dashboard{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="mt-4">
+  <h1 class="mb-4">NBA Teams Dashboard</h1>
+
+  <!-- FILTER FORM -->
+  <form method="POST" action="{{ url_for('views.teams_dashboard') }}" class="form-inline mb-4">
+    <!-- Team Selector -->
+    <label for="team_id" class="mr-2">Team:</label>
+    <select id="team_id" name="team_id" class="form-control mr-3">
+      {% for team in teams %}
+        <option value="{{ team.team_id }}"
+          {% if team.team_id == selected_team_id|int %} selected {% endif %}>
+          {{ team.team_name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Season Start -->
+    <label for="season_start" class="mr-2">From Year:</label>
+    <input
+      type="number"
+      name="season_start"
+      id="season_start"
+      class="form-control mr-3"
+      value="{{ season_start or '' }}"
+      placeholder="All"
+    />
+
+    <!-- Season End -->
+    <label for="season_end" class="mr-2">To Year:</label>
+    <input
+      type="number"
+      name="season_end"
+      id="season_end"
+      class="form-control mr-3"
+      value="{{ season_end or '' }}"
+      placeholder="All"
+    />
+
+    <button type="submit" class="btn btn-primary">Go</button>
+  </form>
+
+  <!-- KEY METRICS CARDS (Bootstrap row + columns) -->
+  <div class="row">
+    <!-- Win/Loss -->
+    <div class="col-sm-6 col-md-3 mb-3">
+      <div class="card bg-dark text-white h-100">
+        <div class="card-body">
+          <h5 class="card-title">Win/Loss</h5>
+          {% if key_metrics %}
+            <p class="card-text display-4">{{ key_metrics.wins }} - {{ key_metrics.losses }}</p>
+          {% else %}
+            <p class="card-text text-danger">No Data</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Offensive Rating -->
+    <div class="col-sm-6 col-md-3 mb-3">
+      <div class="card bg-dark text-white h-100">
+        <div class="card-body">
+          <h5 class="card-title">Offensive Rating</h5>
+          {% if key_metrics %}
+            <p class="card-text display-4">{{ key_metrics.offensive_rating|round(1) }}</p>
+          {% else %}
+            <p class="card-text text-danger">No Data</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Defensive Rating -->
+    <div class="col-sm-6 col-md-3 mb-3">
+      <div class="card bg-dark text-white h-100">
+        <div class="card-body">
+          <h5 class="card-title">Defensive Rating</h5>
+          {% if key_metrics %}
+            <p class="card-text display-4">{{ key_metrics.defensive_rating|round(1) }}</p>
+          {% else %}
+            <p class="card-text text-danger">No Data</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Playoff Status -->
+    <div class="col-sm-6 col-md-3 mb-3">
+      <div class="card bg-dark text-white h-100">
+        <div class="card-body">
+          <h5 class="card-title">Playoff Status</h5>
+          {% if key_metrics %}
+            <p class="card-text h4">{{ key_metrics.playoff_status }}</p>
+          {% else %}
+            <p class="card-text text-danger">No Data</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART SECTION -->
+  <div class="card mb-4">
+    <div class="card-header">eFG% Over the Seasons</div>
+    <div class="card-body">
+      <canvas id="efgChart" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- ADVANCED STATS TABLE -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Advanced Stats (Year: {% if key_metrics %}{{ key_metrics.year }}{% else %}N/A{% endif %})
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="thead-dark">
+          <tr>
+            <th>Team</th>
+            <th>SRS</th>
+            <th>MOV</th>
+            <th>eFG%</th>
+            <th>Pace</th>
+            <th>ORtg</th>
+            <th>DRtg</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in advanced_stats %}
+          <tr>
+            <td>{{ row.team }}</td>
+            <td>{{ row.srs }}</td>
+            <td>{{ row.mov }}</td>
+            <td>{{ row.efg_percent }}</td>
+            <td>{{ row.pace|round(1) }}</td>
+            <td>{{ row.ortg|round(1) }}</td>
+            <td>{{ row.drtg|round(1) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TEAM ROSTER -->
+  <div class="card mb-4">
+    <div class="card-header">Team Roster</div>
+    <div class="card-body p-0">
+      <table class="table table-striped mb-0">
+        <thead class="thead-dark">
+          <tr>
+            <th>Name</th>
+            <th>Position</th>
+            <th>PER</th>
+            <th>TS%</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in roster %}
+          <tr>
+            <td>{{ player.player_name }}</td>
+            <td>{{ player.position }}</td>
+            <td>{{ player.per }}</td>
+            <td>{{ player.ts_pct }}%</td>
+            <td>{{ player.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- CHART.JS PLOT SCRIPT -->
+<script>
+  // Data passed from Flask
+  const yearsData = {{ chart_years|tojson }};
+  const efgData = {{ chart_efg|tojson }};
+
+  // Confirm the canvas is present
+  const ctx = document.getElementById('efgChart').getContext('2d');
+
+  // Build the Chart
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: yearsData,
+      datasets: [{
+        label: 'eFG% by Season',
+        data: efgData,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        fill: true,
+        tension: 0.1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'eFG (%)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Season Year'
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

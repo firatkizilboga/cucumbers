@@ -1285,6 +1285,135 @@ def delete_team_season_stats(team_id, season_id):
     return redirect(url_for("views.team_season_stats"))
 
 
+@views.route("/teams_dashboard", methods=["GET", "POST"])
+def teams_dashboard():
+    """
+    Renders a functional NBA Teams Dashboard using Tailwind CSS and Chart.js.
+    Allows optional filtering by team and season range.
+    """
+
+    # === 1) Fetch all teams for the dropdown
+    # Adjust this query to match your Teams table.
+    teams_query = text("""SELECT team_id, team_name FROM Teams ORDER BY team_name""")
+    all_teams = db.session.execute(teams_query).fetchall()
+
+    # === 2) Parse form inputs 
+    if request.method == "POST":
+        selected_team_id = request.form.get("team_id")
+        season_start = request.form.get("season_start")
+        season_end = request.form.get("season_end")
+    else:
+        selected_team_id = all_teams[2].team_id if all_teams else None
+        season_start = None
+        season_end = None
+
+    # === 3) Query for key metrics 
+    base_key_metrics_query = """
+        SELECT
+            tsi.w AS wins,
+            tsi.l AS losses,
+            CASE WHEN tsi.playoffs = 1 THEN "Playoffs" ELSE "No Playoffs" END AS playoff_status,
+            tss.o_rtg AS offensive_rating,
+            tss.d_rtg AS defensive_rating,
+            s.year,
+            tss.arena
+        FROM Team_Season_Info tsi
+        JOIN Team_Season_Stats tss ON (tsi.team_id = tss.team_id AND tsi.season_id = tss.season_id)
+        JOIN Seasons s ON (tsi.season_id = s.season_id)
+        WHERE tsi.team_id = :team_id
+    """
+
+    params = {"team_id": selected_team_id}
+
+    # If user provided a season range, apply it
+    if season_start and season_end:
+        base_key_metrics_query += " AND s.year BETWEEN :start AND :end"
+        params["start"] = int(season_start)
+        params["end"] = int(season_end)
+
+    # We’ll just grab the latest season from the filtered set
+    base_key_metrics_query += """
+        ORDER BY s.year DESC
+        LIMIT 1
+    """
+
+    key_metrics_query = text(base_key_metrics_query)
+    key_metrics = db.session.execute(key_metrics_query, params).fetchone()
+
+    # === 4) Advanced stats
+    if key_metrics:
+        year_for_adv = key_metrics.year
+    else:
+        year_for_adv = 2023  # default fallback
+
+    adv_query = text("""
+        SELECT
+            t.team_name AS team,
+            tss.srs,
+            tss.mov,
+            CONCAT(ROUND(tss.e_fg_percent * 100,1), '%') AS efg_percent,
+            tss.pace,
+            tss.o_rtg AS ortg,
+            tss.d_rtg AS drtg
+        FROM Team_Season_Stats tss
+        JOIN Teams t ON t.team_id = tss.team_id
+        JOIN Seasons s ON s.season_id = tss.season_id
+        WHERE s.year = :year
+        ORDER BY tss.srs DESC
+        LIMIT 10
+    """)
+    advanced_stats = db.session.execute(adv_query, {"year": year_for_adv}).fetchall()
+
+    # === 5) Team Roster query
+    roster_query = text("""
+        SELECT
+            p.Player AS player_name,
+            pips.Position AS position,
+            CASE WHEN p.HOF = 1 THEN 'Hall of Fame' ELSE 'Active' END AS status,
+            ROUND(pss.PER, 1) AS per,
+            ROUND(pss.TS_Percent * 100, 1) AS ts_pct
+        FROM Players p
+        JOIN Player_Info_Per_Season pips ON pips.Player_ID = p.Player_ID
+        LEFT JOIN Player_Season_Stats pss ON (pss.Player_ID = pips.Player_ID AND pss.Season_ID = pips.Season_ID)
+        WHERE pips.Team_ID = :team_id
+          AND pips.Season_ID IN (
+              SELECT season_id FROM Seasons WHERE year = :year
+          )
+        ORDER BY p.Player
+    """)
+    roster = db.session.execute(
+        roster_query, {"team_id": selected_team_id, "year": year_for_adv}
+    ).fetchall()
+
+    # === 6) Data for a line chart (e.g., eFG% over multiple seasons) ===
+    chart_data_query = text("""
+        SELECT 
+            s.year,
+            ROUND(tss.e_fg_percent * 100, 1) as efg
+        FROM Team_Season_Stats tss
+        JOIN Seasons s ON s.season_id = tss.season_id
+        WHERE tss.team_id = :team_id
+        ORDER BY s.year
+    """)
+    chart_data_rows = db.session.execute(chart_data_query, {"team_id": selected_team_id}).fetchall()
+
+    # We'll turn this into lists for Chart.js
+    years_list = [row.year for row in chart_data_rows]
+    efg_list = [float(row.efg) for row in chart_data_rows]
+
+    return render_template(
+        "teams_dashboard.html",
+        teams=all_teams,
+        selected_team_id=selected_team_id,
+        season_start=season_start,
+        season_end=season_end,
+        key_metrics=key_metrics,
+        advanced_stats=advanced_stats,
+        roster=roster,
+        chart_years=years_list,
+        chart_efg=efg_list,
+    )
+
 # -----------------------
 # Seasons & Game Shots views
 # -----------------------

@@ -34,6 +34,7 @@
                             Teams
                         </a>
                         <div class="dropdown-menu" aria-labelledby="teamsDropdown">
+                            <a href="/teams_dashboard" class="dropdown-item" id="players">Dashboard</a>
                             <a href="/teams" class="dropdown-item" id="players">Team List</a>
                             <a href="/team_season_info" class="dropdown-item" id="team_season_info">Team Season Info</a>
                             <a href="/team_season_stats" class="dropdown-item" id="team_season_stats">Team Season Stats</a>
@@ -89,6 +90,8 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"
         ></script>
+
+
         <script
         type="text/javascript"
         src = "{{url_for('static', filename='index.js')}}"

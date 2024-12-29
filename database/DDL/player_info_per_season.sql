@@ -16,5 +16,5 @@ CREATE TABLE Player_Info_Per_Season (
     FOREIGN KEY (Team_ID) REFERENCES Teams (Team_ID) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_season ON Player_Season_Stats (Season_ID);
-CREATE INDEX idx_player ON Player_Season_Stats (Player_ID);
+CREATE INDEX idx_season ON Player_Info_Per_Season (Season_ID);
+CREATE INDEX idx_player ON Player_Info_Per_Season (Player_ID);

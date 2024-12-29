@@ -1980,12 +1980,12 @@ def delete_game_shots():
 # Assuming 'db' and 'cache' are initialized elsewhere in your application
 
 
-@views.route("/player_stats", methods=["GET", "POST"])
+@views.route("/shot_stats", methods=["GET", "POST"])
 def player_stats():
     images = {}
     players = []
     seasons = []
-
+    player = None
     try:
         # Fetch all players
         players_query = text(
@@ -1999,12 +1999,18 @@ def player_stats():
     except Exception as e:
         flash(f"Error fetching players or seasons: {e}", "error")
         return render_template(
-            "player_stats.html", players=players, seasons=seasons, images=images
+            "shot_stats.html", players=players, seasons=seasons, images=images
         )
 
     if request.method == "POST":
         selected_player_id = request.form.get("player")
         selected_season = request.form.get("season")
+        players_query = text(
+            "SELECT player FROM Players WHERE player_id =:selected_player_id "
+        )
+        player = db.session.execute(
+            players_query, {"selected_player_id": int(selected_player_id)}
+        ).fetchone()
 
         if not selected_player_id or not selected_season:
             flash("Please select both a player and a season.", "error")
@@ -2089,7 +2095,7 @@ def player_stats():
                         "No shot data found for the selected player and season.", "info"
                     )
                     return render_template(
-                        "player_stats.html",
+                        "shot_stats.html",
                         players=players,
                         seasons=seasons,
                         images=images,
@@ -2107,7 +2113,11 @@ def player_stats():
                 flash(f"Error generating statistics: {e}", "error")
 
     return render_template(
-        "player_stats.html", players=players, seasons=seasons, images=images
+        "shot_stats.html",
+        players=players,
+        seasons=seasons,
+        images=images,
+        player=player.player,
     )
 
 

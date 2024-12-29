@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %} Player Statistics {% endblock %}
+{% block title %} Shot Statistics {% endblock %}
 
 {% block content %}
-<h1>Player Statistics</h1>
+<h1>Shot Statistics</h1>
 
 <!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -46,7 +46,7 @@
     </form>
   </div>
 </div>
-
+{% if player %} <h2>{{ player }}</h2> {% endif %}
 {% if images %}
   <!-- Visualization Sections -->
 

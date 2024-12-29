@@ -610,13 +610,24 @@ def add_player_season_info():
         # Get the form data
         season_id = request.form.get("Season_ID")
         player_id = request.form.get("Player_ID")
-        player_name = request.form.get("Player_Name")
         league = request.form.get("League")
         team_id = request.form.get("Team_ID")
         position = request.form.get("Position")
         age = request.form.get("Age")
         experience = request.form.get("Experience")
         mvp = request.form.get("MVP") == "True"
+
+        # Fetch Player Name from Players
+        player_name_query = text("""
+            SELECT Player FROM Players WHERE Player_ID = :player_id
+        """)
+        player_name_result = db.session.execute(player_name_query, {"player_id": player_id}).fetchone()
+        
+        if player_name_result:
+            player_name = player_name_result.Player
+        else:
+            flash("Player not found.", "danger")
+            return render_template("add_player_season_info.html")
 
         if age == "":
             age = None
@@ -691,7 +702,7 @@ def edit_player_season_info(season_id, player_id):
 
     if request.method == "POST":
         # Get updated values from the form
-        player_name = request.form.get("Player_Name")
+        player_name = info.Player_Name
         league = request.form.get("League")
         team_id = request.form.get("Team_ID")
         position = request.form.get("Position")

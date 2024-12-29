@@ -54,9 +54,9 @@ def admin_page():
 
 @views.route("/players")
 def players():
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)  # Default to 10 rows per page
-    search_query = request.args.get('search', None)
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)  # Default to 10 rows per page
+    search_query = request.args.get("search", None)
 
     if search_query:
         # If a search query is provided, fetch only the matching player
@@ -75,7 +75,9 @@ def players():
         FROM Players
         LIMIT :limit OFFSET :offset
         """)
-        players = db.session.execute(query, {"limit": per_page, "offset": offset}).fetchall()
+        players = db.session.execute(
+            query, {"limit": per_page, "offset": offset}
+        ).fetchall()
 
         # Calculate total page number
         total_players_query = text("SELECT COUNT(*) FROM Players")
@@ -88,7 +90,7 @@ def players():
         page=page,
         total_pages=total_pages,
         per_page=per_page,
-        search_query=search_query
+        search_query=search_query,
     )
 
 
@@ -172,7 +174,6 @@ def edit_player(player_id):
     # Retrieve the player's details
     query = text("SELECT * FROM Players WHERE Player_ID = :player_id")
     player = db.session.execute(query, {"player_id": player_id}).fetchone()
-
     if request.method == "POST":
         # Get updated values from the form
         player_name = request.form.get("Player")
@@ -237,12 +238,12 @@ def edit_player(player_id):
 
 @views.route("/player_season_stats")
 def player_season_stats():
-    player_name = request.args.get('player', None)
-    start_year = request.args.get('start_year', None, type=int)
-    end_year = request.args.get('end_year', None, type=int)
-    
+    player_name = request.args.get("player", None)
+    start_year = request.args.get("start_year", None, type=int)
+    end_year = request.args.get("end_year", None, type=int)
+
     stats = []
-    
+
     if player_name and start_year and end_year:
         query = text("""
             SELECT ps.*, s.season_id, s.year AS season_year
@@ -253,19 +254,22 @@ def player_season_stats():
             AND (:start_year = '' OR s.year >= :start_year)
             AND (:end_year = '' OR s.year <= :end_year)
         """)
-        
-        stats = db.session.execute(query, {
-            'player_name': f'%{player_name}%' if player_name else '',
-            'start_year': start_year if start_year else '',
-            'end_year': end_year if end_year else ''
-        }).fetchall()
+
+        stats = db.session.execute(
+            query,
+            {
+                "player_name": f"%{player_name}%" if player_name else "",
+                "start_year": start_year if start_year else "",
+                "end_year": end_year if end_year else "",
+            },
+        ).fetchall()
 
     return render_template(
         "player_season_stats.html",
         stats=stats,
         player_name=player_name,
         start_year=start_year,
-        end_year=end_year
+        end_year=end_year,
     )
 
 
@@ -582,12 +586,12 @@ def edit_player_season_stats(season_id, player_id):
 
 @views.route("/player_season_info")
 def player_season_info():
-    player_name = request.args.get('player', '')
-    start_year = request.args.get('start_year', '')
-    end_year = request.args.get('end_year', '')
-    
+    player_name = request.args.get("player", "")
+    start_year = request.args.get("start_year", "")
+    end_year = request.args.get("end_year", "")
+
     information = []
-    
+
     if player_name and start_year and end_year:
         query = text("""
             SELECT psi.*, s.season_id, s.year AS season_year
@@ -598,19 +602,22 @@ def player_season_info():
             AND (:start_year = '' OR s.year >= :start_year)
             AND (:end_year = '' OR s.year <= :end_year)
         """)
-        
-        information = db.session.execute(query, {
-            'player_name': f'%{player_name}%' if player_name else '',
-            'start_year': start_year if start_year else '',
-            'end_year': end_year if end_year else ''
-        }).fetchall()
+
+        information = db.session.execute(
+            query,
+            {
+                "player_name": f"%{player_name}%" if player_name else "",
+                "start_year": start_year if start_year else "",
+                "end_year": end_year if end_year else "",
+            },
+        ).fetchall()
 
     return render_template(
         "player_season_info.html",
         information=information,
         player_name=player_name,
         start_year=start_year,
-        end_year=end_year
+        end_year=end_year,
     )
 
 
@@ -632,8 +639,10 @@ def add_player_season_info():
         player_name_query = text("""
             SELECT Player FROM Players WHERE Player_ID = :player_id
         """)
-        player_name_result = db.session.execute(player_name_query, {"player_id": player_id}).fetchone()
-        
+        player_name_result = db.session.execute(
+            player_name_query, {"player_id": player_id}
+        ).fetchone()
+
         if player_name_result:
             player_name = player_name_result.Player
         else:
@@ -2117,7 +2126,7 @@ def player_stats():
         players=players,
         seasons=seasons,
         images=images,
-        player=player.player,
+        player=player,
     )
 
 

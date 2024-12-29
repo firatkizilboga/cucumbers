@@ -571,16 +571,36 @@ def edit_player_season_stats(season_id, player_id):
 
 @views.route("/player_season_info")
 def player_season_info():
-    query = text("""
-    SELECT * 
-    FROM Player_Info_Per_Season
-    LIMIT 3
-    """)
+    player_name = request.args.get('player', '')
+    start_year = request.args.get('start_year', '')
+    end_year = request.args.get('end_year', '')
+    
+    information = []
+    
+    if player_name and start_year and end_year:
+        query = text("""
+            SELECT psi.*, s.season_id, s.year AS season_year
+            FROM Player_Info_Per_Season psi
+            JOIN Seasons s ON psi.Season_ID = s.season_id
+            JOIN Players p ON psi.Player_ID = p.Player_ID
+            WHERE (:player_name = '' OR p.Player LIKE :player_name)
+            AND (:start_year = '' OR s.year >= :start_year)
+            AND (:end_year = '' OR s.year <= :end_year)
+        """)
+        
+        information = db.session.execute(query, {
+            'player_name': f'%{player_name}%' if player_name else '',
+            'start_year': start_year if start_year else '',
+            'end_year': end_year if end_year else ''
+        }).fetchall()
 
-    # Execute the query and fetch all rows
-    player_season_info = db.session.execute(query).fetchall()
-
-    return render_template("player_season_info.html", information=player_season_info)
+    return render_template(
+        "player_season_info.html",
+        information=information,
+        player_name=player_name,
+        start_year=start_year,
+        end_year=end_year
+    )
 
 
 @views.route("/add_player_season_info", methods=["GET", "POST"])

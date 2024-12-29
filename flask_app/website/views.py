@@ -67,7 +67,9 @@ def players():
         WHERE Player LIKE :search
         LIMIT :limit OFFSET :offset
         """)
-        players = db.session.execute(query, {"search": f"%{search_query}%", "limit": per_page, "offset": offset}).fetchall()
+        players = db.session.execute(
+            query, {"search": f"%{search_query}%", "limit": per_page, "offset": offset}
+        ).fetchall()
 
         # Calculate total pages for search results
         total_players_query = text("""
@@ -75,7 +77,9 @@ def players():
         FROM Players
         WHERE Player LIKE :search
         """)
-        total_players = db.session.execute(total_players_query, {"search": f"%{search_query}%"}).scalar()
+        total_players = db.session.execute(
+            total_players_query, {"search": f"%{search_query}%"}
+        ).scalar()
         total_pages = (total_players + per_page - 1) // per_page
     else:
         # Normal pagination logic
@@ -1742,7 +1746,7 @@ def upload_game_shots():
                     "Player_ID": int(row["Player_ID"]),
                     "Position_Group": row["Position_Group"],
                     "Position": row["Position"],
-                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Game_Date": row["Game_Date"],
                     "Home_Team": row["Home_Team"],
                     "Away_Team": row["Away_Team"],
                     "Event_Type": row["Event_Type"],
@@ -1873,7 +1877,7 @@ def update_game_shots():
                     "Player_ID": int(row["Player_ID"]),
                     "Position_Group": row["Position_Group"],
                     "Position": row["Position"],
-                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Game_Date": row["Game_Date"],
                     "Home_Team": row["Home_Team"],
                     "Away_Team": row["Away_Team"],
                     "Event_Type": row["Event_Type"],
@@ -1991,12 +1995,6 @@ def delete_game_shots():
         flash(f"An error occurred during deletion: {e}", "error")
 
     return redirect(url_for("views.manage_game_shots"))
-
-
-# Assuming 'db' and 'cache' are initialized elsewhere in your application
-
-
-# Assuming 'db' and 'cache' are initialized elsewhere in your application
 
 
 @views.route("/shot_stats", methods=["GET", "POST"])
@@ -2125,7 +2123,7 @@ def player_stats():
                 images["shot_histogram"] = generate_shot_histogram(shots_df)
                 images["action_prob"] = generate_action_probability(shots_df)
 
-                # Cache the images for future requests (cache for 1 hour)
+                # Cache the images for future requests (cache for 1 hour) this probably does not make any sense.
                 cache.set(cache_key, images, timeout=60 * 60)
 
             except Exception as e:
@@ -2151,8 +2149,8 @@ def generate_shot_map(shots_df):
     # Create a scatter plot using Plotly Express with swapped axes
     fig = px.scatter(
         shots_df,
-        x="Loc_Y",  # Swapped from Loc_X to Loc_Y
-        y="Loc_X",  # Swapped from Loc_Y to Loc_X
+        x="Loc_Y",
+        y="Loc_X",
         color="Shot_Made",
         color_discrete_map={True: "green", False: "red"},
         size_max=10,
@@ -2175,13 +2173,13 @@ def generate_shot_map(shots_df):
     # Update layout to hide axes and grid, adjust ranges accordingly
     fig.update_layout(
         xaxis=dict(
-            range=[0, 47.5],  # Adjusted X-axis range based on Loc_Y
+            range=[0, 47.5],
             showgrid=False,
             zeroline=False,
             showticklabels=False,
         ),
         yaxis=dict(
-            range=[-25, 25],  # Adjusted Y-axis range based on Loc_X
+            range=[-25, 25],
             showgrid=False,
             zeroline=False,
             showticklabels=False,
@@ -2301,10 +2299,10 @@ def create_court():
             type="rect",
             xref="x",
             yref="y",
-            x0=-19,  # Swapped from y to x
-            y0=-6,  # Swapped from x to y
-            x1=24,  # Swapped from y to x
-            y1=6,  # Swapped from x to y
+            x0=-19,
+            y0=-6,
+            x1=24,
+            y1=6,
             line=dict(color="black", width=2),
         ),
         # Three-point line (arc)
@@ -2312,7 +2310,7 @@ def create_court():
             type="circle",
             xref="x",
             yref="y",
-            x0=-4.75,  # Adjusted for swapped axes
+            x0=-4.75,
             y0=-22.75,
             x1=29.75,
             y1=22.75,

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %} Player Statistics {% endblock %}
+
+{% block content %}
+<h1>Player Statistics</h1>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- Player and Season Selection Form -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2>Select Player and Season</h2>
+  </div>
+  <div class="card-body">
+    <form action="{{ url_for('views.player_stats') }}" method="POST">
+      <div class="mb-3">
+        <label for="player" class="form-label">Select Player</label>
+        <select class="form-select" id="player" name="player" required>
+          <option value="" disabled selected>Select a Player</option>
+          {% for player in players %}
+            <option value="{{ player.Player_ID }}">{{ player.PLAYER_NAME }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="season" class="form-label">Select Season</label>
+        <select class="form-select" id="season" name="season" required>
+          <option value="" disabled selected>Select a Season</option>
+          {% for season in seasons %}
+            <option value="{{ season.Season_ID }}">{{ season.year }} (ID: {{ season.Season_ID }})</option>
+          {% endfor %}
+          <option value="Lifetime">Lifetime</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Generate Statistics</button>
+    </form>
+  </div>
+</div>
+
+{% if images %}
+  <!-- Visualization Sections -->
+
+  <!-- Shot Map -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2>Shot Map</h2>
+    </div>
+    <div class="card-body">
+      <div id="shot_map"></div>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <script>
+        var shot_map = {{ images.shot_map | safe }};
+        Plotly.newPlot('shot_map', shot_map.data, shot_map.layout);
+      </script>
+    </div>
+  </div>
+
+  <!-- Shot Time Histogram -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2>Shot Time Distribution</h2>
+    </div>
+    <div class="card-body">
+      <div id="shot_histogram"></div>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <script>
+        var shot_histogram = {{ images.shot_histogram | safe }};
+        Plotly.newPlot('shot_histogram', shot_histogram.data, shot_histogram.layout);
+      </script>
+    </div>
+  </div>
+
+  <!-- Action Type Probability -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2>Action Type Probability</h2>
+    </div>
+    <div class="card-body">
+      <div id="action_prob"></div>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <script>
+        var action_prob = {{ images.action_prob | safe }};
+        Plotly.newPlot('action_prob', action_prob.data, action_prob.layout);
+      </script>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

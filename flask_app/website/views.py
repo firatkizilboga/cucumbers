@@ -4,9 +4,15 @@ from flask_login import current_user
 from sqlalchemy import text
 import csv
 import io
+import json
+import pandas as pd
+import plotly.express as px
+import plotly
+from flask_caching import Cache
 
 views = Blueprint("views", __name__)
 db = SQLAlchemy()
+cache = Cache()
 
 from sqlalchemy import text  # Import text for raw SQL queries
 from .utils import validate_player_data, validate_player_stats, validate_player_info, validate_team_data
@@ -1882,3 +1888,338 @@ def delete_game_shots():
         flash(f"An error occurred during deletion: {e}", "error")
 
     return redirect(url_for("views.manage_game_shots"))
+
+
+# Assuming 'db' and 'cache' are initialized elsewhere in your application
+
+
+# Assuming 'db' and 'cache' are initialized elsewhere in your application
+
+
+@views.route("/player_stats", methods=["GET", "POST"])
+def player_stats():
+    images = {}
+    players = []
+    seasons = []
+
+    try:
+        # Fetch all players
+        players_query = text(
+            "SELECT Player_ID, Player as PLAYER_NAME FROM Players ORDER BY PLAYER_NAME ASC"
+        )
+        players = db.session.execute(players_query).fetchall()
+
+        # Fetch all seasons
+        seasons_query = text("SELECT Season_ID, year FROM Seasons ORDER BY year DESC")
+        seasons = db.session.execute(seasons_query).fetchall()
+    except Exception as e:
+        flash(f"Error fetching players or seasons: {e}", "error")
+        return render_template(
+            "player_stats.html", players=players, seasons=seasons, images=images
+        )
+
+    if request.method == "POST":
+        selected_player_id = request.form.get("player")
+        selected_season = request.form.get("season")
+
+        if not selected_player_id or not selected_season:
+            flash("Please select both a player and a season.", "error")
+            return redirect(url_for("views.player_stats"))
+
+        # Convert 'Lifetime' to None or handle appropriately
+        if selected_season == "Lifetime":
+            season_filter = None
+        else:
+            try:
+                season_filter = int(selected_season)
+            except ValueError:
+                flash("Invalid season selected.", "error")
+                return redirect(url_for("views.player_stats"))
+
+        # Create a unique cache key based on player and season
+        cache_key = f"player_{selected_player_id}_season_{season_filter if season_filter else 'Lifetime'}"
+        cached_images = cache.get(cache_key)
+
+        if cached_images:
+            images = cached_images
+        else:
+            try:
+                # Fetch shot data based on selection
+                if season_filter:
+                    shots_query = text("""
+                        SELECT *
+                        FROM Game_Shots
+                        WHERE Player_ID = :player_id AND Season_ID = :season_id
+                    """)
+                    shots = db.session.execute(
+                        shots_query,
+                        {"player_id": selected_player_id, "season_id": season_filter},
+                    ).fetchall()
+                else:
+                    shots_query = text("""
+                        SELECT *
+                        FROM Game_Shots
+                        WHERE Player_ID = :player_id
+                    """)
+                    shots = db.session.execute(
+                        shots_query, {"player_id": selected_player_id}
+                    ).fetchall()
+
+                # Convert to DataFrame using list of dicts
+                shots_df = (
+                    pd.DataFrame(
+                        shots,
+                        columns=[
+                            "Game_ID",
+                            "Season_ID",
+                            "shot_id",
+                            "Team_ID",
+                            "Player_ID",
+                            "Position_Group",
+                            "Position",
+                            "Game_Date",
+                            "Home_Team",
+                            "Away_Team",
+                            "Event_Type",
+                            "Shot_Made",
+                            "Action_Type",
+                            "Shot_Type",
+                            "Basic_Zone",
+                            "Zone_Name",
+                            "Zone_Abb",
+                            "Zone_Range",
+                            "Loc_X",
+                            "Loc_Y",
+                            "Shot_Distance",
+                            "Quarter",
+                            "Mins_Left",
+                            "Secs_Left",
+                        ],
+                    )
+                    if shots
+                    else pd.DataFrame()
+                )
+
+                if shots_df.empty:
+                    flash(
+                        "No shot data found for the selected player and season.", "info"
+                    )
+                    return render_template(
+                        "player_stats.html",
+                        players=players,
+                        seasons=seasons,
+                        images=images,
+                    )
+
+                # Generate visualizations using Plotly
+                images["shot_map"] = generate_shot_map(shots_df)
+                images["shot_histogram"] = generate_shot_histogram(shots_df)
+                images["action_prob"] = generate_action_probability(shots_df)
+
+                # Cache the images for future requests (cache for 1 hour)
+                cache.set(cache_key, images, timeout=60 * 60)
+
+            except Exception as e:
+                flash(f"Error generating statistics: {e}", "error")
+
+    return render_template(
+        "player_stats.html", players=players, seasons=seasons, images=images
+    )
+
+
+def generate_shot_map(shots_df):
+    """
+    Generates an interactive Shot Map using Plotly Express with Loc_Y on the X-axis.
+    """
+    # Ensure the DataFrame is not empty
+    if shots_df.empty:
+        return {}
+
+    # Create a scatter plot using Plotly Express with swapped axes
+    fig = px.scatter(
+        shots_df,
+        x="Loc_Y",  # Swapped from Loc_X to Loc_Y
+        y="Loc_X",  # Swapped from Loc_Y to Loc_X
+        color="Shot_Made",
+        color_discrete_map={True: "green", False: "red"},
+        size_max=10,
+        hover_data=["Action_Type", "Shot_Distance"],
+        title="Shot Map (Side View)",
+        labels={
+            "Loc_Y": "Distance from Hoop",
+            "Loc_X": "Left/Right Position",
+            "Shot_Made": "Shot Made",
+        },
+    )
+
+    # Define the basketball court dimensions using Plotly Graph Objects shapes
+    court = create_court()
+
+    # Add basketball court shapes to the figure
+    for shape in court["shapes"]:
+        fig.add_shape(shape)
+
+    # Update layout to hide axes and grid, adjust ranges accordingly
+    fig.update_layout(
+        xaxis=dict(
+            range=[0, 47.5],  # Adjusted X-axis range based on Loc_Y
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+        yaxis=dict(
+            range=[-25, 25],  # Adjusted Y-axis range based on Loc_X
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+        plot_bgcolor="white",
+        showlegend=True,
+        xaxis_title="Distance from Hoop (Loc_Y)",
+        yaxis_title="Left/Right Position (Loc_X)",
+        hovermode="closest",
+    )
+
+    # Convert Plotly figure to JSON for embedding in HTML
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+
+def generate_shot_histogram(shots_df):
+    """
+    Generates an interactive Shot Time Histogram using Plotly.
+    """
+    # Count shots per quarter, differentiating made and missed
+    df_quarter = (
+        shots_df.groupby(["Quarter", "Shot_Made"]).size().reset_index(name="Count")
+    )
+
+    # Create histogram
+    fig = px.bar(
+        df_quarter,
+        x="Quarter",
+        y="Count",
+        color="Shot_Made",
+        labels={
+            "Shot_Made": "Shot Made",
+            "Count": "Number of Shots",
+            "Quarter": "Quarter",
+        },
+        title="Shots per Quarter",
+        color_discrete_map={"True": "green", "False": "red"},
+        barmode="stack",
+    )
+
+    fig.update_layout(
+        xaxis=dict(tickmode="linear", dtick=1),
+        yaxis=dict(title="Number of Shots"),
+        legend_title_text="Shot Made",
+    )
+
+    # Convert Plotly figure to JSON
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+
+def generate_action_probability(shots_df):
+    """
+    Generates an interactive Action Type Probability Bar Chart using Plotly.
+    """
+    # Calculate probability of making each action type
+    df_action = shots_df.groupby("Action_Type")["Shot_Made"].mean().reset_index()
+    df_action.rename(columns={"Shot_Made": "Probability"}, inplace=True)
+    df_action.sort_values(by="Probability", ascending=False, inplace=True)
+
+    # Create bar chart
+    fig = px.bar(
+        df_action,
+        x="Probability",
+        y="Action_Type",
+        orientation="h",
+        labels={
+            "Probability": "Probability of Making Shot",
+            "Action_Type": "Action Type",
+        },
+        title="Probability of Making Each Action Type",
+        range_x=[0, 1],
+        hover_data={"Probability": ":.2f"},
+    )
+
+    # Add probability labels
+    fig.update_traces(marker_color="indigo")
+    fig.update_layout(
+        yaxis=dict(autorange="reversed"),  # Highest probability on top
+        xaxis_tickformat=".0%",
+    )
+
+    # Convert Plotly figure to JSON
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+
+def create_court():
+    """
+    Returns a dictionary containing shapes to draw a simplified basketball court with swapped axes.
+    """
+    court_shapes = [
+        # Hoop
+        dict(
+            type="circle",
+            xref="x",
+            yref="y",
+            x0=-0.75,
+            y0=-0.75,
+            x1=0.75,
+            y1=0.75,
+            line=dict(color="black", width=2),
+        ),
+        # Backboard
+        dict(
+            type="rect",
+            xref="x",
+            yref="y",
+            x0=-0.75,  # Swapped from y to x
+            y0=-3,  # Swapped from x to y
+            x1=-0.65,  # Swapped from y to x
+            y1=3,  # Swapped from x to y
+            line=dict(color="black", width=2),
+            fillcolor="black",
+        ),
+        # Paint
+        dict(
+            type="rect",
+            xref="x",
+            yref="y",
+            x0=-19,  # Swapped from y to x
+            y0=-8,  # Swapped from x to y
+            x1=19,  # Swapped from y to x
+            y1=8,  # Swapped from x to y
+            line=dict(color="black", width=2),
+        ),
+        # Three-point line (arc)
+        dict(
+            type="circle",
+            xref="x",
+            yref="y",
+            x0=-4.75,  # Adjusted for swapped axes
+            y0=-23.75,
+            x1=42.75,
+            y1=23.75,
+            line=dict(color="black", width=2),
+            opacity=1,
+            fillcolor="rgba(0,0,0,0)",
+        ),
+        # Restricted Area
+        dict(
+            type="circle",
+            xref="x",
+            yref="y",
+            x0=-4,
+            y0=-4,
+            x1=4,
+            y1=4,
+            line=dict(color="black", width=2),
+        ),
+    ]
+
+    return {"shapes": court_shapes}

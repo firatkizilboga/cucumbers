@@ -60,13 +60,23 @@ def players():
 
     if search_query:
         # If a search query is provided, fetch only the matching player
+        offset = (page - 1) * per_page
         query = text("""
         SELECT * 
         FROM Players
         WHERE Player LIKE :search
+        LIMIT :limit OFFSET :offset
         """)
-        players = db.session.execute(query, {"search": f"%{search_query}%"}).fetchall()
-        total_pages = 1
+        players = db.session.execute(query, {"search": f"%{search_query}%", "limit": per_page, "offset": offset}).fetchall()
+
+        # Calculate total pages for search results
+        total_players_query = text("""
+        SELECT COUNT(*) 
+        FROM Players
+        WHERE Player LIKE :search
+        """)
+        total_players = db.session.execute(total_players_query, {"search": f"%{search_query}%"}).scalar()
+        total_pages = (total_players + per_page - 1) // per_page
     else:
         # Normal pagination logic
         offset = (page - 1) * per_page

@@ -143,7 +143,7 @@ JOIN Players AS p
   ON p.Player_ID = adv.player_id
 JOIN Seasons AS s 
   ON s.year = adv.season
-JOIN Teams AS t 
+LEFT JOIN Teams AS t 
   ON adv.tm = t.team_abbreviation -- Optimized JOIN condition
 WHERE adv.rn = 1;
 

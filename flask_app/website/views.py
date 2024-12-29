@@ -15,7 +15,12 @@ db = SQLAlchemy()
 cache = Cache()
 
 from sqlalchemy import text  # Import text for raw SQL queries
-from .utils import validate_player_data, validate_player_stats, validate_player_info, validate_team_data
+from .utils import (
+    validate_player_data,
+    validate_player_stats,
+    validate_player_info,
+    validate_team_data,
+)
 from .auth import admin_required
 
 from flask_login import login_user, logout_user, login_required, current_user
@@ -702,6 +707,7 @@ def teams():
 
     return render_template("teams.html", teams=teams)
 
+
 @views.route("/add_team", methods=["GET", "POST"])
 @admin_required
 def add_team():
@@ -710,10 +716,7 @@ def add_team():
         team_name = request.form.get("Team")
         abbreviations = request.form.get("Abbreviations")
 
-
-        is_valid, error_message = validate_team_data(
-            team_name, abbreviations
-        )
+        is_valid, error_message = validate_team_data(team_name, abbreviations)
 
         if not is_valid:
             flash(error_message, "error")
@@ -730,10 +733,7 @@ def add_team():
 
         db.session.execute(
             query_insert,
-            {
-                "team_name": team_name,
-                "abbreviations": abbreviations
-            },
+            {"team_name": team_name, "abbreviations": abbreviations},
         )
         db.session.commit()
 
@@ -767,10 +767,7 @@ def edit_team(team_id):
         team_name = request.form.get("Team")
         abbreviations = request.form.get("Abbreviations")
 
-
-        is_valid, error_message = validate_team_data(
-            team_name, abbreviations
-        )
+        is_valid, error_message = validate_team_data(team_name, abbreviations)
 
         if not is_valid:
             flash(error_message, "error")
@@ -797,6 +794,7 @@ def edit_team(team_id):
         return redirect(url_for("views.teams"))
 
     return render_template("edit_team.html", team=team)
+
 
 @views.route("/team_season_info", methods=["GET", "POST"])
 def team_season_info():
@@ -835,6 +833,7 @@ def team_season_info():
             results = []
     return render_template("team_season_info.html", teams=all_teams, results=results)
 
+
 @views.route("/add_team_season_info", methods=["GET", "POST"])
 def add_team_season_info():
     """
@@ -847,8 +846,8 @@ def add_team_season_info():
 
     if request.method == "POST":
         # Retrieve form fields
-        team_id = request.form.get("team_id")         # e.g. from a <select> or hidden input
-        season_id = request.form.get("season_id")     # e.g. from a <select>
+        team_id = request.form.get("team_id")  # e.g. from a <select> or hidden input
+        season_id = request.form.get("season_id")  # e.g. from a <select>
         league = request.form.get("league", "")
         abbreviation = request.form.get("abbreviation", "")
         wins = request.form.get("wins", 0)
@@ -883,17 +882,20 @@ def add_team_season_info():
         """)
 
         try:
-            db.session.execute(insert_query, {
-                "team_id": team_id,
-                "season_id": season_id,
-                "league": league,
-                "abbreviation": abbreviation,
-                "wins": wins,
-                "losses": losses,
-                "playoff_wins": playoff_wins,
-                "playoff_losses": playoff_losses,
-                "age": age
-            })
+            db.session.execute(
+                insert_query,
+                {
+                    "team_id": team_id,
+                    "season_id": season_id,
+                    "league": league,
+                    "abbreviation": abbreviation,
+                    "wins": wins,
+                    "losses": losses,
+                    "playoff_wins": playoff_wins,
+                    "playoff_losses": playoff_losses,
+                    "age": age,
+                },
+            )
             db.session.commit()
 
             flash("New Team Season Info added successfully!", "success")
@@ -905,19 +907,16 @@ def add_team_season_info():
             db.session.rollback()
 
     # If GET or if there was an error, render the form again
-    return render_template(
-        "add_team_season_info.html",
-        teams=teams,
-        seasons=seasons
-    )
-
+    return render_template("add_team_season_info.html", teams=teams, seasons=seasons)
 
 
 @views.route("/delete_team_season_info/<int:team_id>/<int:season_id>", methods=["POST"])
 @admin_required
 def delete_team_season_info(team_id, season_id):
     # Execute the DELETE SQL query directly
-    query = text("DELETE FROM Team_Season_Info WHERE team_id = :team_id AND season_id = :season_id")
+    query = text(
+        "DELETE FROM Team_Season_Info WHERE team_id = :team_id AND season_id = :season_id"
+    )
     db.session.execute(query, {"team_id": team_id, "season_id": season_id})
 
     db.session.commit()
@@ -925,7 +924,9 @@ def delete_team_season_info(team_id, season_id):
     return redirect(url_for("views.team_season_info"))
 
 
-@views.route("/edit_team_season_info/<int:team_id>/<int:season_id>", methods=["GET", "POST"])
+@views.route(
+    "/edit_team_season_info/<int:team_id>/<int:season_id>", methods=["GET", "POST"]
+)
 def edit_team_season_info(team_id, season_id):
     """
     View to edit a specific team's season record in the Team_Season_Info table.
@@ -947,8 +948,7 @@ def edit_team_season_info(team_id, season_id):
           AND TSI.season_id = :season_id
     """)
     record = db.session.execute(
-        select_query, 
-        {"team_id": team_id, "season_id": season_id}
+        select_query, {"team_id": team_id, "season_id": season_id}
     ).fetchone()
 
     if not record:
@@ -980,17 +980,20 @@ def edit_team_season_info(team_id, season_id):
               AND season_id = :season_id
         """)
 
-        db.session.execute(update_query, {
-            "league": league,
-            "abbreviation": abbreviation,
-            "wins": wins,
-            "losses": losses,
-            "playoff_wins": playoff_wins,
-            "playoff_losses": playoff_losses,
-            "age": age,
-            "team_id": team_id,
-            "season_id": season_id
-        })
+        db.session.execute(
+            update_query,
+            {
+                "league": league,
+                "abbreviation": abbreviation,
+                "wins": wins,
+                "losses": losses,
+                "playoff_wins": playoff_wins,
+                "playoff_losses": playoff_losses,
+                "age": age,
+                "team_id": team_id,
+                "season_id": season_id,
+            },
+        )
 
         db.session.commit()
         flash("Team season info updated successfully!", "success")
@@ -998,12 +1001,9 @@ def edit_team_season_info(team_id, season_id):
         # Redirect or render the same page, depending on your flow
         # Here we’ll redirect back to the main team_season_info page
         return redirect(url_for("views.team_season_info"))
-    
+
     # If GET, render the edit form with existing values
-    return render_template(
-        "edit_team_season_info.html",
-        record=record
-    )
+    return render_template("edit_team_season_info.html", record=record)
 
 
 @views.route("/team_season_stats", methods=["GET", "POST"])
@@ -1050,11 +1050,7 @@ def team_season_stats():
             """)
             results = db.session.execute(query, {"team_id": selected_team}).fetchall()
 
-    return render_template(
-        "team_season_stats.html",
-        teams=all_teams,
-        results=results
-    )
+    return render_template("team_season_stats.html", teams=all_teams, results=results)
 
 
 @views.route("/add_team_season_stats", methods=["GET", "POST"])
@@ -1108,31 +1104,34 @@ def add_team_season_stats():
         """)
 
         try:
-            db.session.execute(insert_query, {
-                "team_id": team_id,
-                "season_id": season_id,
-                "mov": mov,
-                "sos": sos,
-                "srs": srs,
-                "o_rtg": o_rtg,
-                "d_rtg": d_rtg,
-                "n_rtg": n_rtg,
-                "pace": pace,
-                "f_tr": f_tr,
-                "x3p_ar": x3p_ar,
-                "ts_percent": ts_percent,
-                "e_fg_percent": e_fg_percent,
-                "tov_percent": tov_percent,
-                "orb_percent": orb_percent,
-                "ft_fga": ft_fga,
-                "opp_e_fg_percent": opp_e_fg_percent,
-                "opp_tov_percent": opp_tov_percent,
-                "opp_drb_percent": opp_drb_percent,
-                "opp_ft_fga": opp_ft_fga,
-                "arena": arena,
-                "attend": attend,
-                "attend_g": attend_g
-            })
+            db.session.execute(
+                insert_query,
+                {
+                    "team_id": team_id,
+                    "season_id": season_id,
+                    "mov": mov,
+                    "sos": sos,
+                    "srs": srs,
+                    "o_rtg": o_rtg,
+                    "d_rtg": d_rtg,
+                    "n_rtg": n_rtg,
+                    "pace": pace,
+                    "f_tr": f_tr,
+                    "x3p_ar": x3p_ar,
+                    "ts_percent": ts_percent,
+                    "e_fg_percent": e_fg_percent,
+                    "tov_percent": tov_percent,
+                    "orb_percent": orb_percent,
+                    "ft_fga": ft_fga,
+                    "opp_e_fg_percent": opp_e_fg_percent,
+                    "opp_tov_percent": opp_tov_percent,
+                    "opp_drb_percent": opp_drb_percent,
+                    "opp_ft_fga": opp_ft_fga,
+                    "arena": arena,
+                    "attend": attend,
+                    "attend_g": attend_g,
+                },
+            )
             db.session.commit()
 
             flash("Team season stats added successfully!", "success")
@@ -1145,7 +1144,9 @@ def add_team_season_stats():
     return render_template("add_team_season_stats.html", teams=teams, seasons=seasons)
 
 
-@views.route("/edit_team_season_stats/<int:team_id>/<int:season_id>", methods=["GET", "POST"])
+@views.route(
+    "/edit_team_season_stats/<int:team_id>/<int:season_id>", methods=["GET", "POST"]
+)
 def edit_team_season_stats(team_id, season_id):
     # Fetch the existing record
     select_query = text("""
@@ -1177,10 +1178,9 @@ def edit_team_season_stats(team_id, season_id):
         WHERE team_id = :team_id
           AND season_id = :season_id
     """)
-    record = db.session.execute(select_query, {
-        "team_id": team_id,
-        "season_id": season_id
-    }).fetchone()
+    record = db.session.execute(
+        select_query, {"team_id": team_id, "season_id": season_id}
+    ).fetchone()
 
     if not record:
         flash("No team season stats found for the specified team and season.", "error")
@@ -1238,31 +1238,34 @@ def edit_team_season_stats(team_id, season_id):
               AND season_id = :season_id
         """)
         try:
-            db.session.execute(update_query, {
-                "mov": mov,
-                "sos": sos,
-                "srs": srs,
-                "o_rtg": o_rtg,
-                "d_rtg": d_rtg,
-                "n_rtg": n_rtg,
-                "pace": pace,
-                "f_tr": f_tr,
-                "x3p_ar": x3p_ar,
-                "ts_percent": ts_percent,
-                "e_fg_percent": e_fg_percent,
-                "tov_percent": tov_percent,
-                "orb_percent": orb_percent,
-                "ft_fga": ft_fga,
-                "opp_e_fg_percent": opp_e_fg_percent,
-                "opp_tov_percent": opp_tov_percent,
-                "opp_drb_percent": opp_drb_percent,
-                "opp_ft_fga": opp_ft_fga,
-                "arena": arena,
-                "attend": attend,
-                "attend_g": attend_g,
-                "team_id": team_id,
-                "season_id": season_id
-            })
+            db.session.execute(
+                update_query,
+                {
+                    "mov": mov,
+                    "sos": sos,
+                    "srs": srs,
+                    "o_rtg": o_rtg,
+                    "d_rtg": d_rtg,
+                    "n_rtg": n_rtg,
+                    "pace": pace,
+                    "f_tr": f_tr,
+                    "x3p_ar": x3p_ar,
+                    "ts_percent": ts_percent,
+                    "e_fg_percent": e_fg_percent,
+                    "tov_percent": tov_percent,
+                    "orb_percent": orb_percent,
+                    "ft_fga": ft_fga,
+                    "opp_e_fg_percent": opp_e_fg_percent,
+                    "opp_tov_percent": opp_tov_percent,
+                    "opp_drb_percent": opp_drb_percent,
+                    "opp_ft_fga": opp_ft_fga,
+                    "arena": arena,
+                    "attend": attend,
+                    "attend_g": attend_g,
+                    "team_id": team_id,
+                    "season_id": season_id,
+                },
+            )
             db.session.commit()
             flash("Team season stats updated successfully!", "success")
             return redirect(url_for("views.team_season_stats"))
@@ -1273,7 +1276,9 @@ def edit_team_season_stats(team_id, season_id):
     return render_template("edit_team_season_stats.html", record=record)
 
 
-@views.route("/delete_team_season_stats/<int:team_id>/<int:season_id>", methods=["POST"])
+@views.route(
+    "/delete_team_season_stats/<int:team_id>/<int:season_id>", methods=["POST"]
+)
 def delete_team_season_stats(team_id, season_id):
     delete_query = text("""
         DELETE FROM Team_Season_Stats
@@ -1303,7 +1308,7 @@ def teams_dashboard():
     teams_query = text("""SELECT team_id, team_name FROM Teams ORDER BY team_name""")
     all_teams = db.session.execute(teams_query).fetchall()
 
-    # === 2) Parse form inputs 
+    # === 2) Parse form inputs
     if request.method == "POST":
         selected_team_id = request.form.get("team_id")
         season_start = request.form.get("season_start")
@@ -1313,7 +1318,7 @@ def teams_dashboard():
         season_start = None
         season_end = None
 
-    # === 3) Query for key metrics 
+    # === 3) Query for key metrics
     base_key_metrics_query = """
         SELECT
             tsi.w AS wins,
@@ -1401,7 +1406,9 @@ def teams_dashboard():
         WHERE tss.team_id = :team_id
         ORDER BY s.year
     """)
-    chart_data_rows = db.session.execute(chart_data_query, {"team_id": selected_team_id}).fetchall()
+    chart_data_rows = db.session.execute(
+        chart_data_query, {"team_id": selected_team_id}
+    ).fetchall()
 
     # We'll turn this into lists for Chart.js
     years_list = [row.year for row in chart_data_rows]
@@ -1419,6 +1426,7 @@ def teams_dashboard():
         chart_years=years_list,
         chart_efg=efg_list,
     )
+
 
 # -----------------------
 # Seasons & Game Shots views
@@ -2167,10 +2175,10 @@ def create_court():
             type="circle",
             xref="x",
             yref="y",
-            x0=-0.75,
-            y0=-0.75,
-            x1=0.75,
-            y1=0.75,
+            x0=4,
+            y0=-2,
+            x1=4.9,
+            y1=2,
             line=dict(color="black", width=2),
         ),
         # Backboard
@@ -2178,22 +2186,20 @@ def create_court():
             type="rect",
             xref="x",
             yref="y",
-            x0=-0.75,  # Swapped from y to x
-            y0=-3,  # Swapped from x to y
-            x1=-0.65,  # Swapped from y to x
-            y1=3,  # Swapped from x to y
+            x0=2.5,
+            y0=-30,
+            x1=2.5,
+            y1=30,
             line=dict(color="black", width=2),
-            fillcolor="black",
-        ),
-        # Paint
+        ),  # Paint
         dict(
             type="rect",
             xref="x",
             yref="y",
             x0=-19,  # Swapped from y to x
-            y0=-8,  # Swapped from x to y
-            x1=19,  # Swapped from y to x
-            y1=8,  # Swapped from x to y
+            y0=-6,  # Swapped from x to y
+            x1=24,  # Swapped from y to x
+            y1=6,  # Swapped from x to y
             line=dict(color="black", width=2),
         ),
         # Three-point line (arc)
@@ -2202,9 +2208,9 @@ def create_court():
             xref="x",
             yref="y",
             x0=-4.75,  # Adjusted for swapped axes
-            y0=-23.75,
-            x1=42.75,
-            y1=23.75,
+            y0=-22.75,
+            x1=29.75,
+            y1=22.75,
             line=dict(color="black", width=2),
             opacity=1,
             fillcolor="rgba(0,0,0,0)",
@@ -2214,9 +2220,9 @@ def create_court():
             type="circle",
             xref="x",
             yref="y",
-            x0=-4,
+            x0=3,
             y0=-4,
-            x1=4,
+            x1=5,
             y1=4,
             line=dict(color="black", width=2),
         ),

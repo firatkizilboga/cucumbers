@@ -44,16 +44,43 @@ def admin_page():
 
 @views.route("/players")
 def players():
-    query = text("""
-    SELECT * 
-    FROM Players
-    LIMIT 3
-    """)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)  # Default to 10 rows per page
+    search_query = request.args.get('search', None)
 
-    # Execute the query and fetch all rows
-    players = db.session.execute(query).fetchall()
+    if search_query:
+        # If a search query is provided, fetch only the matching player
+        query = text("""
+        SELECT * 
+        FROM Players
+        WHERE Player LIKE :search
+        """)
+        players = db.session.execute(query, {"search": f"%{search_query}%"}).fetchall()
+        total_pages = 1
+    else:
+        # Normal pagination logic
+        offset = (page - 1) * per_page
+        query = text("""
+        SELECT * 
+        FROM Players
+        LIMIT :limit OFFSET :offset
+        """)
+        players = db.session.execute(query, {"limit": per_page, "offset": offset}).fetchall()
 
-    return render_template("players.html", players=players)
+        # Calculate total page number
+        total_players_query = text("SELECT COUNT(*) FROM Players")
+        total_players = db.session.execute(total_players_query).scalar()
+        total_pages = (total_players + per_page - 1) // per_page
+
+    return render_template(
+        "players.html",
+        players=players,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        search_query=search_query
+    )
+
 
 
 @views.route("/add_player", methods=["GET", "POST"])

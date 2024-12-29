@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from flask_login import current_user
 from sqlalchemy import text
 import csv
 import io
@@ -55,16 +54,42 @@ def admin_page():
 
 @views.route("/players")
 def players():
-    query = text("""
-    SELECT * 
-    FROM Players
-    LIMIT 3
-    """)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)  # Default to 10 rows per page
+    search_query = request.args.get('search', None)
 
-    # Execute the query and fetch all rows
-    players = db.session.execute(query).fetchall()
+    if search_query:
+        # If a search query is provided, fetch only the matching player
+        query = text("""
+        SELECT * 
+        FROM Players
+        WHERE Player LIKE :search
+        """)
+        players = db.session.execute(query, {"search": f"%{search_query}%"}).fetchall()
+        total_pages = 1
+    else:
+        # Normal pagination logic
+        offset = (page - 1) * per_page
+        query = text("""
+        SELECT * 
+        FROM Players
+        LIMIT :limit OFFSET :offset
+        """)
+        players = db.session.execute(query, {"limit": per_page, "offset": offset}).fetchall()
 
-    return render_template("players.html", players=players)
+        # Calculate total page number
+        total_players_query = text("SELECT COUNT(*) FROM Players")
+        total_players = db.session.execute(total_players_query).scalar()
+        total_pages = (total_players + per_page - 1) // per_page
+
+    return render_template(
+        "players.html",
+        players=players,
+        page=page,
+        total_pages=total_pages,
+        per_page=per_page,
+        search_query=search_query
+    )
 
 
 @views.route("/add_player", methods=["GET", "POST"])
@@ -212,16 +237,36 @@ def edit_player(player_id):
 
 @views.route("/player_season_stats")
 def player_season_stats():
-    query = text("""
-    SELECT * 
-    FROM Player_Season_Stats
-    LIMIT 3
-    """)
+    player_name = request.args.get('player', None)
+    start_year = request.args.get('start_year', None, type=int)
+    end_year = request.args.get('end_year', None, type=int)
+    
+    stats = []
+    
+    if player_name and start_year and end_year:
+        query = text("""
+            SELECT ps.*, s.season_id, s.year AS season_year
+            FROM Player_Season_Stats ps
+            JOIN Seasons s ON ps.Season_ID = s.season_id
+            JOIN Players p ON ps.Player_ID = p.Player_ID
+            WHERE (:player_name = '' OR p.Player LIKE :player_name)
+            AND (:start_year = '' OR s.year >= :start_year)
+            AND (:end_year = '' OR s.year <= :end_year)
+        """)
+        
+        stats = db.session.execute(query, {
+            'player_name': f'%{player_name}%' if player_name else '',
+            'start_year': start_year if start_year else '',
+            'end_year': end_year if end_year else ''
+        }).fetchall()
 
-    # Execute the query and fetch all rows
-    player_season_stats = db.session.execute(query).fetchall()
-
-    return render_template("player_season_stats.html", stats=player_season_stats)
+    return render_template(
+        "player_season_stats.html",
+        stats=stats,
+        player_name=player_name,
+        start_year=start_year,
+        end_year=end_year
+    )
 
 
 @views.route("/add_player_season_stats", methods=["GET", "POST"])
@@ -537,16 +582,36 @@ def edit_player_season_stats(season_id, player_id):
 
 @views.route("/player_season_info")
 def player_season_info():
-    query = text("""
-    SELECT * 
-    FROM Player_Info_Per_Season
-    LIMIT 3
-    """)
+    player_name = request.args.get('player', '')
+    start_year = request.args.get('start_year', '')
+    end_year = request.args.get('end_year', '')
+    
+    information = []
+    
+    if player_name and start_year and end_year:
+        query = text("""
+            SELECT psi.*, s.season_id, s.year AS season_year
+            FROM Player_Info_Per_Season psi
+            JOIN Seasons s ON psi.Season_ID = s.season_id
+            JOIN Players p ON psi.Player_ID = p.Player_ID
+            WHERE (:player_name = '' OR p.Player LIKE :player_name)
+            AND (:start_year = '' OR s.year >= :start_year)
+            AND (:end_year = '' OR s.year <= :end_year)
+        """)
+        
+        information = db.session.execute(query, {
+            'player_name': f'%{player_name}%' if player_name else '',
+            'start_year': start_year if start_year else '',
+            'end_year': end_year if end_year else ''
+        }).fetchall()
 
-    # Execute the query and fetch all rows
-    player_season_info = db.session.execute(query).fetchall()
-
-    return render_template("player_season_info.html", information=player_season_info)
+    return render_template(
+        "player_season_info.html",
+        information=information,
+        player_name=player_name,
+        start_year=start_year,
+        end_year=end_year
+    )
 
 
 @views.route("/add_player_season_info", methods=["GET", "POST"])
@@ -556,13 +621,24 @@ def add_player_season_info():
         # Get the form data
         season_id = request.form.get("Season_ID")
         player_id = request.form.get("Player_ID")
-        player_name = request.form.get("Player_Name")
         league = request.form.get("League")
         team_id = request.form.get("Team_ID")
         position = request.form.get("Position")
         age = request.form.get("Age")
         experience = request.form.get("Experience")
         mvp = request.form.get("MVP") == "True"
+
+        # Fetch Player Name from Players
+        player_name_query = text("""
+            SELECT Player FROM Players WHERE Player_ID = :player_id
+        """)
+        player_name_result = db.session.execute(player_name_query, {"player_id": player_id}).fetchone()
+        
+        if player_name_result:
+            player_name = player_name_result.Player
+        else:
+            flash("Player not found.", "danger")
+            return render_template("add_player_season_info.html")
 
         if age == "":
             age = None
@@ -637,7 +713,7 @@ def edit_player_season_info(season_id, player_id):
 
     if request.method == "POST":
         # Get updated values from the form
-        player_name = request.form.get("Player_Name")
+        player_name = info.Player_Name
         league = request.form.get("League")
         team_id = request.form.get("Team_ID")
         position = request.form.get("Position")

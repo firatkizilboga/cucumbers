@@ -67,7 +67,9 @@ def players():
         WHERE Player LIKE :search
         LIMIT :limit OFFSET :offset
         """)
-        players = db.session.execute(query, {"search": f"%{search_query}%", "limit": per_page, "offset": offset}).fetchall()
+        players = db.session.execute(
+            query, {"search": f"%{search_query}%", "limit": per_page, "offset": offset}
+        ).fetchall()
 
         # Calculate total pages for search results
         total_players_query = text("""
@@ -75,7 +77,9 @@ def players():
         FROM Players
         WHERE Player LIKE :search
         """)
-        total_players = db.session.execute(total_players_query, {"search": f"%{search_query}%"}).scalar()
+        total_players = db.session.execute(
+            total_players_query, {"search": f"%{search_query}%"}
+        ).scalar()
         total_pages = (total_players + per_page - 1) // per_page
     else:
         # Normal pagination logic
@@ -108,7 +112,7 @@ def players():
 @admin_required
 def add_player():
     if request.method == "POST":
-        # Get the form values for the new player
+        # Get form values for the new player
         player_name = request.form.get("Player")
         birth_year = request.form.get("Birth_Year")
         num_seasons = request.form.get("Num_Seasons")
@@ -181,7 +185,7 @@ def delete_player(player_id):
 @views.route("/edit_player/<int:player_id>", methods=["GET", "POST"])
 @admin_required
 def edit_player(player_id):
-    # Retrieve the player's details
+    # Get player details
     query = text("SELECT * FROM Players WHERE Player_ID = :player_id")
     player = db.session.execute(query, {"player_id": player_id}).fetchone()
     if request.method == "POST":
@@ -213,7 +217,6 @@ def edit_player(player_id):
             flash(error_message, "error")
             return redirect(url_for("views.edit_player", player_id=player_id))
 
-        # Update the player's details in the database
         query_update = text("""
             UPDATE Players
             SET Player = :player_name,
@@ -374,7 +377,6 @@ def add_player_season_stats():
             flash(error_message, "danger")
             return render_template("add_player_season_stats.html")
 
-        # Insert new player season stats into the database
         query_insert = text("""
             INSERT INTO Player_Season_Stats (
                 Season_ID, Player_ID, Games, PER, TS_Percent, X3p_ar, F_tr, ORB_Percent, DRB_Percent, TRB_Percent, AST_Percent, 
@@ -426,7 +428,6 @@ def add_player_season_stats():
 )
 @admin_required
 def delete_player_season_stats(season_id, player_id):
-    # Execute the DELETE SQL query using both Season_ID and Player_ID
     query = text("""
         DELETE FROM Player_Season_Stats
         WHERE Season_ID = :season_id AND Player_ID = :player_id
@@ -443,7 +444,7 @@ def delete_player_season_stats(season_id, player_id):
 )
 @admin_required
 def edit_player_season_stats(season_id, player_id):
-    # Retrieve the player season stats details
+    # Get player season stats details
     query = text(
         "SELECT * FROM Player_Season_Stats WHERE Season_ID = :season_id AND Player_ID = :player_id"
     )
@@ -527,7 +528,6 @@ def edit_player_season_stats(season_id, player_id):
             vorp,
         ) = variables
 
-        # Update the player season stats in the database
         query_update = text("""
             UPDATE Player_Season_Stats
             SET Games = :games,
@@ -672,7 +672,6 @@ def add_player_season_info():
             flash(error_message, "danger")
             return render_template("add_player_season_info.html")
 
-        # Insert the new player season info into the database
         query_insert = text("""
             INSERT INTO Player_Info_Per_Season (Season_ID, Player_ID, Player_Name, League, Team_ID, Position, Age, Experience, MVP)
             VALUES (:season_id, :player_id, :player_name, :league, :team_id, :position, :age, :experience, :mvp)
@@ -738,7 +737,7 @@ def edit_player_season_info(season_id, player_id):
         position = request.form.get("Position")
         age = request.form.get("Age")
         experience = request.form.get("Experience")
-        mvp = request.form.get("MVP") == "True"  # Convert to boolean
+        mvp = request.form.get("MVP") == "True"
 
         if age == "":
             age = None
@@ -753,7 +752,6 @@ def edit_player_season_info(season_id, player_id):
             flash(error_message, "danger")
             return render_template("edit_player_season_info.html", info=info)
 
-        # Update the player season info in the database
         query_update = text("""
             UPDATE Player_Info_Per_Season
             SET Player_Name = :player_name,
@@ -1735,7 +1733,7 @@ def upload_game_shots():
                     "Player_ID": int(row["Player_ID"]),
                     "Position_Group": row["Position_Group"],
                     "Position": row["Position"],
-                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Game_Date": row["Game_Date"],
                     "Home_Team": row["Home_Team"],
                     "Away_Team": row["Away_Team"],
                     "Event_Type": row["Event_Type"],
@@ -1866,7 +1864,7 @@ def update_game_shots():
                     "Player_ID": int(row["Player_ID"]),
                     "Position_Group": row["Position_Group"],
                     "Position": row["Position"],
-                    "Game_Date": row["Game_Date"],  # Ensure correct date format
+                    "Game_Date": row["Game_Date"],
                     "Home_Team": row["Home_Team"],
                     "Away_Team": row["Away_Team"],
                     "Event_Type": row["Event_Type"],
@@ -1984,12 +1982,6 @@ def delete_game_shots():
         flash(f"An error occurred during deletion: {e}", "error")
 
     return redirect(url_for("views.manage_game_shots"))
-
-
-# Assuming 'db' and 'cache' are initialized elsewhere in your application
-
-
-# Assuming 'db' and 'cache' are initialized elsewhere in your application
 
 
 @views.route("/shot_stats", methods=["GET", "POST"])
@@ -2118,7 +2110,7 @@ def player_stats():
                 images["shot_histogram"] = generate_shot_histogram(shots_df)
                 images["action_prob"] = generate_action_probability(shots_df)
 
-                # Cache the images for future requests (cache for 1 hour)
+                # Cache the images for future requests (cache for 1 hour) this probably does not make any sense.
                 cache.set(cache_key, images, timeout=60 * 60)
 
             except Exception as e:
@@ -2144,8 +2136,8 @@ def generate_shot_map(shots_df):
     # Create a scatter plot using Plotly Express with swapped axes
     fig = px.scatter(
         shots_df,
-        x="Loc_Y",  # Swapped from Loc_X to Loc_Y
-        y="Loc_X",  # Swapped from Loc_Y to Loc_X
+        x="Loc_Y",
+        y="Loc_X",
         color="Shot_Made",
         color_discrete_map={True: "green", False: "red"},
         size_max=10,
@@ -2168,13 +2160,13 @@ def generate_shot_map(shots_df):
     # Update layout to hide axes and grid, adjust ranges accordingly
     fig.update_layout(
         xaxis=dict(
-            range=[0, 47.5],  # Adjusted X-axis range based on Loc_Y
+            range=[0, 47.5],
             showgrid=False,
             zeroline=False,
             showticklabels=False,
         ),
         yaxis=dict(
-            range=[-25, 25],  # Adjusted Y-axis range based on Loc_X
+            range=[-25, 25],
             showgrid=False,
             zeroline=False,
             showticklabels=False,
@@ -2294,10 +2286,10 @@ def create_court():
             type="rect",
             xref="x",
             yref="y",
-            x0=-19,  # Swapped from y to x
-            y0=-6,  # Swapped from x to y
-            x1=24,  # Swapped from y to x
-            y1=6,  # Swapped from x to y
+            x0=-19,
+            y0=-6,
+            x1=24,
+            y1=6,
             line=dict(color="black", width=2),
         ),
         # Three-point line (arc)
@@ -2305,7 +2297,7 @@ def create_court():
             type="circle",
             xref="x",
             yref="y",
-            x0=-4.75,  # Adjusted for swapped axes
+            x0=-4.75,
             y0=-22.75,
             x1=29.75,
             y1=22.75,

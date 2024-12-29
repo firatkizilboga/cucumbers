@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
-from flask_login import current_user
 from sqlalchemy import text
 import csv
 import io
@@ -80,7 +79,6 @@ def players():
         per_page=per_page,
         search_query=search_query
     )
-
 
 
 @views.route("/add_player", methods=["GET", "POST"])
@@ -228,16 +226,36 @@ def edit_player(player_id):
 
 @views.route("/player_season_stats")
 def player_season_stats():
-    query = text("""
-    SELECT * 
-    FROM Player_Season_Stats
-    LIMIT 3
-    """)
+    player_name = request.args.get('player', None)
+    start_year = request.args.get('start_year', None, type=int)
+    end_year = request.args.get('end_year', None, type=int)
+    
+    stats = []
+    
+    if player_name and start_year and end_year:
+        query = text("""
+            SELECT ps.*, s.season_id, s.year AS season_year
+            FROM Player_Season_Stats ps
+            JOIN Seasons s ON ps.Season_ID = s.season_id
+            JOIN Players p ON ps.Player_ID = p.Player_ID
+            WHERE (:player_name = '' OR p.Player LIKE :player_name)
+            AND (:start_year = '' OR s.year >= :start_year)
+            AND (:end_year = '' OR s.year <= :end_year)
+        """)
+        
+        stats = db.session.execute(query, {
+            'player_name': f'%{player_name}%' if player_name else '',
+            'start_year': start_year if start_year else '',
+            'end_year': end_year if end_year else ''
+        }).fetchall()
 
-    # Execute the query and fetch all rows
-    player_season_stats = db.session.execute(query).fetchall()
-
-    return render_template("player_season_stats.html", stats=player_season_stats)
+    return render_template(
+        "player_season_stats.html",
+        stats=stats,
+        player_name=player_name,
+        start_year=start_year,
+        end_year=end_year
+    )
 
 
 @views.route("/add_player_season_stats", methods=["GET", "POST"])

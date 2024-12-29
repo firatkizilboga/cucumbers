@@ -935,14 +935,13 @@ def add_team_season_info():
     View to add a new season record to the Team_Season_Info table.
     """
 
-    # Optionally, fetch a list of teams and/or seasons to populate dropdowns in the form:
     teams = db.session.execute(text("SELECT team_id, team_name FROM Teams")).fetchall()
     seasons = db.session.execute(text("SELECT season_id, year FROM Seasons")).fetchall()
 
     if request.method == "POST":
         # Retrieve form fields
-        team_id = request.form.get("team_id")  # e.g. from a <select> or hidden input
-        season_id = request.form.get("season_id")  # e.g. from a <select>
+        team_id = request.form.get("team_id")
+        season_id = request.form.get("season_id")
         league = request.form.get("league", "")
         abbreviation = request.form.get("abbreviation", "")
         wins = request.form.get("wins", 0)
@@ -997,18 +996,15 @@ def add_team_season_info():
             return redirect(url_for("views.team_season_info"))
 
         except Exception as e:
-            # Optional: log or print the error
             flash(f"Error while adding Team Season Info: {str(e)}", "error")
             db.session.rollback()
 
-    # If GET or if there was an error, render the form again
     return render_template("add_team_season_info.html", teams=teams, seasons=seasons)
 
 
 @views.route("/delete_team_season_info/<int:team_id>/<int:season_id>", methods=["POST"])
 @admin_required
 def delete_team_season_info(team_id, season_id):
-    # Execute the DELETE SQL query directly
     query = text(
         "DELETE FROM Team_Season_Info WHERE team_id = :team_id AND season_id = :season_id"
     )
@@ -1093,8 +1089,6 @@ def edit_team_season_info(team_id, season_id):
         db.session.commit()
         flash("Team season info updated successfully!", "success")
 
-        # Redirect or render the same page, depending on your flow
-        # Here we’ll redirect back to the main team_season_info page
         return redirect(url_for("views.team_season_info"))
 
     # If GET, render the edit form with existing values
@@ -1112,7 +1106,7 @@ def team_season_stats():
     if request.method == "POST":
         selected_team = request.form.get("team")
         if selected_team:
-            # Query the Team_Season_Stats table (join on Seasons to display year, if you wish).
+            # Query the Team_Season_Stats table
             query = text("""
                 SELECT
                   tss.team_id,
@@ -1399,7 +1393,6 @@ def teams_dashboard():
     """
 
     # === 1) Fetch all teams for the dropdown
-    # Adjust this query to match your Teams table.
     teams_query = text("""SELECT team_id, team_name FROM Teams ORDER BY team_name""")
     all_teams = db.session.execute(teams_query).fetchall()
 
@@ -1437,7 +1430,7 @@ def teams_dashboard():
         params["start"] = int(season_start)
         params["end"] = int(season_end)
 
-    # We’ll just grab the latest season from the filtered set
+    # Grab the latest season from the filtered set
     base_key_metrics_query += """
         ORDER BY s.year DESC
         LIMIT 1
@@ -1491,7 +1484,7 @@ def teams_dashboard():
         roster_query, {"team_id": selected_team_id, "year": year_for_adv}
     ).fetchall()
 
-    # === 6) Data for a line chart (e.g., eFG% over multiple seasons) ===
+    # === 6) Data for a line chart (eFG% over multiple seasons) ===
     chart_data_query = text("""
         SELECT 
             s.year,
@@ -1505,7 +1498,7 @@ def teams_dashboard():
         chart_data_query, {"team_id": selected_team_id}
     ).fetchall()
 
-    # We'll turn this into lists for Chart.js
+    # lists for Chart.js
     years_list = [row.year for row in chart_data_rows]
     efg_list = [float(row.efg) for row in chart_data_rows]
 

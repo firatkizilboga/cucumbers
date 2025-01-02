@@ -19,8 +19,8 @@
       {% endfor %}
     </select>
 
-    <!-- Season Start -->
-    <label for="season_start" class="mr-2">From Year:</label>
+    <!-- Season -->
+    <label for="season_start" class="mr-2">Year:</label>
     <input
       type="number"
       name="season_start"
@@ -29,18 +29,6 @@
       value="{{ season_start or '' }}"
       placeholder="All"
     />
-
-    <!-- Season End -->
-    <label for="season_end" class="mr-2">To Year:</label>
-    <input
-      type="number"
-      name="season_end"
-      id="season_end"
-      class="form-control mr-3"
-      value="{{ season_end or '' }}"
-      placeholder="All"
-    />
-
     <button type="submit" class="btn btn-primary">Go</button>
   </form>
 

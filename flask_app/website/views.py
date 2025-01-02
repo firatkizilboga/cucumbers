@@ -1398,11 +1398,9 @@ def teams_dashboard():
     if request.method == "POST":
         selected_team_id = request.form.get("team_id")
         season_start = request.form.get("season_start")
-        season_end = request.form.get("season_end")
     else:
         selected_team_id = all_teams[2].team_id if all_teams else None
         season_start = None
-        season_end = None
 
     # === 3) Query for key metrics
     base_key_metrics_query = """
@@ -1423,16 +1421,9 @@ def teams_dashboard():
     params = {"team_id": selected_team_id}
 
     # If user provided a season range, apply it
-    if season_start and season_end:
-        base_key_metrics_query += " AND s.year BETWEEN :start AND :end"
+    if season_start:
+        base_key_metrics_query += " AND s.year = :start" 
         params["start"] = int(season_start)
-        params["end"] = int(season_end)
-
-    # Grab the latest season from the filtered set
-    base_key_metrics_query += """
-        ORDER BY s.year DESC
-        LIMIT 1
-    """
 
     key_metrics_query = text(base_key_metrics_query)
     key_metrics = db.session.execute(key_metrics_query, params).fetchone()
@@ -1505,7 +1496,6 @@ def teams_dashboard():
         teams=all_teams,
         selected_team_id=selected_team_id,
         season_start=season_start,
-        season_end=season_end,
         key_metrics=key_metrics,
         advanced_stats=advanced_stats,
         roster=roster,

@@ -1,4 +1,5 @@
 # cucumbers
+## This project is archived.
 
 init the db with:
 docker compose -f compose.yaml up -d
